@@ -196,11 +196,57 @@ func (a *Agent) streamResponseFromProvider(
 		MaxTokens:   4096,
 	}
 
-	// 调用提供商的 Complete 方法
-	responseMsg, err := provider.Complete(ctx, convMessages, config)
+	// 尝试使用流式响应
+	streamChan, err := provider.Stream(ctx, convMessages, config)
 	if err != nil {
-		return nil, fmt.Errorf("provider complete failed: %w", err)
+		// 如果流式不支持，回退到 Complete
+		responseMsg, err := provider.Complete(ctx, convMessages, config)
+		if err != nil {
+			return nil, fmt.Errorf("provider complete failed: %w", err)
+		}
+		return &responseMsg, nil
 	}
 
-	return &responseMsg, nil
+	// 收集流式响应块
+	var textBuilder strings.Builder
+	var toolCalls []conversation.MessageContent
+
+	for chunk := range streamChan {
+		if chunk.Err != nil {
+			return nil, fmt.Errorf("stream error: %w", chunk.Err)
+		}
+
+		if chunk.Text != "" {
+			textBuilder.WriteString(chunk.Text)
+		}
+
+		if chunk.ToolName != "" {
+			toolCalls = append(toolCalls, conversation.MessageContent{
+				Type:     conversation.MessageContentToolUse,
+				ToolName: chunk.ToolName,
+				ToolArgs: []byte(chunk.ToolArgs),
+			})
+		}
+
+		if chunk.Done {
+			break
+		}
+	}
+
+	// 构建响应消息
+	response := conversation.Message{
+		Role:    conversation.RoleAssistant,
+		Content: []conversation.MessageContent{},
+	}
+
+	if textBuilder.Len() > 0 {
+		response.Content = append(response.Content, conversation.MessageContent{
+			Type: conversation.MessageContentText,
+			Text: textBuilder.String(),
+		})
+	}
+
+	response.Content = append(response.Content, toolCalls...)
+
+	return &response, nil
 }
