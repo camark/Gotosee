@@ -60,6 +60,7 @@ gogo/
   - [x] Database 服务器（数据库操作） ✅ 新增
   - [x] HTTP Client 服务器（HTTP 请求） ✅ 新增
   - [x] AutoVisualiser 服务器（图表可视化） ✅ 新增
+  - [x] Notion 服务器（Notion 集成） ✅ 新增
 - [x] **goose-acp** - ACP 协议
   - [x] ACP 类型定义
   - [x] ACP 服务器
@@ -75,11 +76,17 @@ gogo/
   - [x] 会话类型（User, Scheduled, SubAgent, Hidden, Terminal, Gateway, Acp）
   - [x] 扩展数据管理
   - [x] 会话统计
-- [x] **goose-agents** - 代理框架骨架 (2026-04-10)
+- [x] **goose-agents** - 代理框架 (2026-04-10)
   - [x] Agent 核心类型 (`internal/agents/agent.go`)
   - [x] 代理类型定义 (`internal/agents/types.go`)
   - [x] 重试管理器 (`internal/agents/retry.go`)
   - [x] 扩展管理器 (`internal/agents/extension.go`)
+  - [x] 生命周期管理器 (`internal/agents/lifecycle.go`) ✅ 新增
+  - [x] 完整 Agent 循环实现 ✅ 新增
+    - [x] callLLM 方法支持 LLM 调用
+    - [x] executeTool 方法支持工具调用
+    - [x] collectTools 从 MCP 服务器收集工具
+    - [x] Reply 主循环支持多轮对话
 - [x] **goose-cli** - 命令行接口骨架 (2026-04-10)
   - [x] CLI 框架 (`internal/cli/cli.go`)
   - [x] configure 命令 (配置向导)
