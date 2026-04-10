@@ -94,8 +94,6 @@ gogo/
 
 ### 待迁移
 - [ ] 更多 AI 提供商 (Bedrock, Vertex AI, Snowflake 等)
-- [ ] 会话导出/导入功能
-- [ ] 完整的 Agent 循环（工具调度、消息处理）
 
 ## 构建
 
