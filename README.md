@@ -87,17 +87,18 @@ gogo/
     - [x] executeTool 方法支持工具调用
     - [x] collectTools 从 MCP 服务器收集工具
     - [x] Reply 主循环支持多轮对话
-- [x] **goose-cli** - 命令行接口骨架 (2026-04-10)
+- [x] **goose-cli** - 命令行接口 (2026-04-10) ✅ 完成
   - [x] CLI 框架 (`internal/cli/cli.go`)
   - [x] configure 命令 (配置向导)
-  - [x] session 命令 (列表、删除)
+  - [x] session 命令 (列表、删除、导出、导入)
   - [x] recipe 命令 (列表、验证、解释、运行)
   - [x] schedule 命令 (列表、添加、删除、运行)
   - [x] term 命令 (运行、初始化)
   - [x] project 命令 (列表、添加、删除、切换)
   - [x] doctor 命令 (诊断)
   - [x] info 命令 (信息)
-  - [x] chat 命令 (交互式对话) ✅ 新增
+  - [x] chat 命令 (交互式对话)
+  - [x] version 命令 (版本显示)
 
 ### 待迁移
 - [ ] 更多 AI 提供商 (Bedrock, Vertex AI, Snowflake 等)
@@ -158,11 +159,12 @@ go test ./...
 
 | 指标 | 数量 |
 |------|------|
-| Go 文件 | 76+ |
-| 代码行数 | ~22000+ |
+| Go 文件 | 80+ |
+| 代码行数 | ~23000+ |
 | 包 | 21 |
-| CLI 命令 | 10 |
+| CLI 命令 | 11 |
 | MCP 服务器 | 14 |
+| 提供商实现 | 6 |
 
 ## 依赖
 
