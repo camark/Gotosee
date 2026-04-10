@@ -113,8 +113,11 @@ func runConfigure() error {
 	fmt.Println("5. Azure OpenAI")
 	fmt.Println("6. OpenRouter (多模型聚合)")
 	fmt.Println("7. DeepSeek (深度求索)")
+	fmt.Println("8. Kimi (月之暗面)")
+	fmt.Println("9. MiniMax (名之梦)")
+	fmt.Println("10. Qwen (通义千问 - 阿里云)")
 
-	fmt.Print("请输入选项 (1-7): ")
+	fmt.Print("请输入选项 (1-10): ")
 	providerChoice, _ := reader.ReadString('\n')
 	providerChoice = strings.TrimSpace(providerChoice)
 
@@ -134,6 +137,12 @@ func runConfigure() error {
 		provider = "openrouter"
 	case "7":
 		provider = "deepseek"
+	case "8":
+		provider = "kimi"
+	case "9":
+		provider = "minimax"
+	case "10":
+		provider = "qwen"
 	default:
 		fmt.Println("无效的选项")
 		return nil

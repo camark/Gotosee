@@ -154,6 +154,30 @@ func GetProvider(providerType, apiKey, baseURL, modelName string) (Provider, err
 			Provider: providerType,
 			Model:    modelName,
 		}), nil
+	case "kimi":
+		return NewKimiProvider(KimiConfig{
+			APIKey:  apiKey,
+			BaseURL: baseURL,
+		}, model.ModelConfig{
+			Provider: providerType,
+			Model:    modelName,
+		}), nil
+	case "minimax":
+		return NewMiniMaxProvider(MiniMaxConfig{
+			APIKey:  apiKey,
+			BaseURL: baseURL,
+		}, model.ModelConfig{
+			Provider: providerType,
+			Model:    modelName,
+		}), nil
+	case "qwen":
+		return NewQwenProvider(QwenConfig{
+			APIKey:  apiKey,
+			BaseURL: baseURL,
+		}, model.ModelConfig{
+			Provider: providerType,
+			Model:    modelName,
+		}), nil
 	default:
 		return nil, fmt.Errorf("unknown provider type: %s", providerType)
 	}
