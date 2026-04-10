@@ -221,6 +221,7 @@ const (
 	McpCommandTime               McpCommand = "time"
 	McpCommandEnvironment        McpCommand = "environment"
 	McpCommandProcess            McpCommand = "process"
+	McpCommandDatabase           McpCommand = "database"
 )
 
 // String 返回命令字符串。
@@ -252,6 +253,8 @@ func ParseMcpCommand(s string) (McpCommand, error) {
 		return McpCommandEnvironment, nil
 	case "process", "proc":
 		return McpCommandProcess, nil
+	case "database", "db":
+		return McpCommandDatabase, nil
 	default:
 		return "", fmt.Errorf("unknown MCP command: %s", s)
 	}

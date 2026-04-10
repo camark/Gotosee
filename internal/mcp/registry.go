@@ -135,4 +135,9 @@ func init() {
 	Register("process", func() Server {
 		return NewProcessServer()
 	})
+
+	// 注册数据库服务器
+	Register("database", func() Server {
+		return NewDatabaseServer()
+	})
 }
