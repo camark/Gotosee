@@ -125,4 +125,9 @@ func init() {
 	Register("filesystem", func() Server {
 		return NewFilesystemServer(nil)
 	})
+
+	// 注册时间服务器
+	Register("time", func() Server {
+		return NewTimeServer()
+	})
 }
