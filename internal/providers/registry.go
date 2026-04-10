@@ -146,6 +146,14 @@ func GetProvider(providerType, apiKey, baseURL, modelName string) (Provider, err
 			Provider: providerType,
 			Model:    modelName,
 		}), nil
+	case "deepseek":
+		return NewDeepSeekProvider(DeepSeekConfig{
+			APIKey:  apiKey,
+			BaseURL: baseURL,
+		}, model.ModelConfig{
+			Provider: providerType,
+			Model:    modelName,
+		}), nil
 	default:
 		return nil, fmt.Errorf("unknown provider type: %s", providerType)
 	}

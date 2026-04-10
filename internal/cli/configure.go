@@ -112,8 +112,9 @@ func runConfigure() error {
 	fmt.Println("4. Ollama")
 	fmt.Println("5. Azure OpenAI")
 	fmt.Println("6. OpenRouter (多模型聚合)")
+	fmt.Println("7. DeepSeek (深度求索)")
 
-	fmt.Print("请输入选项 (1-6): ")
+	fmt.Print("请输入选项 (1-7): ")
 	providerChoice, _ := reader.ReadString('\n')
 	providerChoice = strings.TrimSpace(providerChoice)
 
@@ -131,6 +132,8 @@ func runConfigure() error {
 		provider = "azure"
 	case "6":
 		provider = "openrouter"
+	case "7":
+		provider = "deepseek"
 	default:
 		fmt.Println("无效的选项")
 		return nil
