@@ -87,6 +87,12 @@ gogo/
     - [x] executeTool 方法支持工具调用
     - [x] collectTools 从 MCP 服务器收集工具
     - [x] Reply 主循环支持多轮对话
+  - [x] 工具确认路由器 (`internal/agents/tool_confirmation_router.go`) ✅ 新增
+  - [x] 权限管理器 (`internal/permission/permission.go`) ✅ 新增
+  - [x] Reply 辅助功能 (`internal/agents/reply_parts.go`) ✅ 新增
+    - [x] ReplyContext 回复上下文
+    - [x] ToolCategorizeResult 工具分类
+    - [x] buildSystemPrompt 系统提示构建
 - [x] **goose-cli** - 命令行接口 (2026-04-10) ✅ 完成
   - [x] CLI 框架 (`internal/cli/cli.go`)
   - [x] configure 命令 (配置向导)
@@ -172,12 +178,13 @@ go test ./...
 
 | 指标 | 数量 |
 |------|------|
-| Go 文件 | 85+ |
-| 代码行数 | ~26000+ |
-| 包 | 21 |
+| Go 文件 | 90+ |
+| 代码行数 | ~28000+ |
+| 包 | 23 |
 | CLI 命令 | 11 |
 | MCP 服务器 | 14 |
 | 提供商实现 | 10 |
+| 权限级别 | 4 (AllowOnce, AlwaysAllow, DenyOnce, AlwaysDeny) |
 
 ## 依赖
 
