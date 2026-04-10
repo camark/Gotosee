@@ -578,6 +578,70 @@ type SessionStats struct {
 	TotalTokens   int `json:"total_tokens"`
 }
 
+// ============================================================================
+// 导出/导入功能
+// ============================================================================
+
+// SessionExport 会话导出格式。
+type SessionExport struct {
+	Version   string    `json:"version"`
+	ExportedAt time.Time `json:"exported_at"`
+	Session   *Session  `json:"session"`
+}
+
+// ExportSession 导出会话到 JSON。
+func (sm *SessionManager) ExportSession(ctx context.Context, id string) (*SessionExport, error) {
+	session, err := sm.GetSession(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &SessionExport{
+		Version:   "1.0",
+		ExportedAt: time.Now(),
+		Session:   session,
+	}, nil
+}
+
+// ExportSessions 批量导出会话。
+func (sm *SessionManager) ExportSessions(ctx context.Context, ids []string) ([]*SessionExport, error) {
+	exports := make([]*SessionExport, 0, len(ids))
+	for _, id := range ids {
+		exp, err := sm.ExportSession(ctx, id)
+		if err != nil {
+			return nil, fmt.Errorf("failed to export session %s: %w", id, err)
+		}
+		exports = append(exports, exp)
+	}
+	return exports, nil
+}
+
+// ImportSession 导入会话。
+func (sm *SessionManager) ImportSession(ctx context.Context, exp *SessionExport) error {
+	if exp.Session == nil {
+		return fmt.Errorf("invalid export: missing session data")
+	}
+
+	// 检查会话是否已存在
+	_, err := sm.GetSession(ctx, exp.Session.ID)
+	if err == nil {
+		return fmt.Errorf("session %s already exists", exp.Session.ID)
+	}
+
+	// 创建新会话
+	return sm.CreateSession(ctx, exp.Session)
+}
+
+// ImportSessions 批量导入会话。
+func (sm *SessionManager) ImportSessions(ctx context.Context, exports []*SessionExport) error {
+	for _, exp := range exports {
+		if err := sm.ImportSession(ctx, exp); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // 错误定义
 var (
 	ErrSessionNotFound = fmt.Errorf("session not found")
