@@ -1,0 +1,30 @@
+# Worktrees
+.worktrees/
+worktrees/
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+vendor/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.venv/
+venv/
+
+# Build output
+bin/
+obj/
+build/
