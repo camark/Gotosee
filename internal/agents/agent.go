@@ -100,8 +100,23 @@ func marshalArgs(args map[string]interface{}) []byte {
 func (a *Agent) Reply(ctx context.Context, messages []*conversation.Message) (<-chan AgentEvent, error) {
 	eventChan := make(chan AgentEvent, 32)
 
+	// 初始化生命周期状态（如果需要）
+	if a.lifecycleManager.GetState() == AgentLifecycleCreated {
+		a.lifecycleManager.Transition(AgentLifecycleInitializing)
+		a.lifecycleManager.Transition(AgentLifecycleReady)
+	}
+
 	go func() {
 		defer close(eventChan)
+
+		// 转换到处理中状态
+		a.lifecycleManager.Transition(AgentLifecycleProcessing)
+		defer func() {
+			// 确保返回到就绪状态
+			if a.lifecycleManager.GetState() == AgentLifecycleProcessing {
+				a.lifecycleManager.Transition(AgentLifecycleReady)
+			}
+		}()
 
 		// 重置重试计数器
 		a.retryManager.Reset()
