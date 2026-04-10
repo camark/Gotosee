@@ -72,17 +72,19 @@ gogo/
   - [x] CLI 框架 (`internal/cli/cli.go`)
   - [x] configure 命令 (配置向导)
   - [x] session 命令 (列表、删除)
-  - [x] recipe 命令 (列表、验证、解释)
-  - [x] schedule 命令 (列表、添加、删除)
+  - [x] recipe 命令 (列表、验证、解释、运行)
+  - [x] schedule 命令 (列表、添加、删除、运行)
   - [x] term 命令 (运行、初始化)
-  - [x] project 命令
+  - [x] project 命令 (列表、添加、删除、切换)
   - [x] doctor 命令 (诊断)
   - [x] info 命令 (信息)
   - [x] chat 命令 (交互式对话) ✅ 新增
 
 ### 待迁移
-- [ ] 更多 AI 提供商 (Anthropic, Google, Ollama 等)
-- [ ] goose-cli 完整功能 (配方执行、会话运行模式)
+- [ ] 更多 AI 提供商 (Bedrock, Vertex AI, Snowflake 等)
+- [ ] MCP 服务器增强 (Memory, Tutorial, AutoVisualiser 等)
+- [ ] 会话导出/导入功能
+- [ ] 完整的 Agent 循环（工具调度、消息处理）
 
 ## 构建
 
@@ -140,9 +142,10 @@ go test ./...
 
 | 指标 | 数量 |
 |------|------|
-| Go 文件 | 35+ |
-| 代码行数 | ~7500+ |
-| 包 | 16 |
+| Go 文件 | 40+ |
+| 代码行数 | ~9000+ |
+| 包 | 18 |
+| CLI 命令 | 10 |
 
 ## 依赖
 
