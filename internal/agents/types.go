@@ -7,6 +7,7 @@ import (
 
 	"github.com/aaif-goose/gogo/internal/conversation"
 	"github.com/aaif-goose/gogo/internal/mcp"
+	"github.com/aaif-goose/gogo/internal/permission"
 	"github.com/aaif-goose/gogo/internal/providers"
 	"github.com/aaif-goose/gogo/internal/session"
 )
@@ -194,8 +195,8 @@ const (
 // AgentConfig Agent 配置。
 type AgentConfig struct {
 	SessionManager       *session.SessionManager
-	PermissionManager    interface{} // TODO: 实现 permission manager
-	SchedulerService     interface{} // TODO: 实现 scheduler trait
+	PermissionManager    *permission.PermissionManager // 权限管理器
+	SchedulerService     interface{}                   // TODO: 实现 scheduler trait
 	GooseMode            string
 	DisableSessionNaming bool
 	GoosePlatform        GoosePlatform

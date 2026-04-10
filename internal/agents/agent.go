@@ -31,7 +31,6 @@ type Agent struct {
 	lifecycleManager       *LifecycleManager
 	toolConfirmationRouter *ToolConfirmationRouter
 	permissionManager      *permission.PermissionManager
-	container              *Container
 }
 
 // Container 容器（用于隔离执行环境）。
@@ -71,7 +70,6 @@ func NewAgentWithConfig(config *AgentConfig) *Agent {
 		lifecycleManager:       lifecycleManager,
 		toolConfirmationRouter: toolConfirmationRouter,
 		permissionManager:      permissionManager,
-		container:              nil,
 	}
 }
 
