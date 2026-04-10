@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -81,70 +82,70 @@ func (s *FilesystemServer) ListTools(ctx context.Context) ([]Tool, error) {
 		},
 		{
 			Name:        "list_directory",
-			Description: "列出目录内容",
+			Description: "List contents of a directory. Use this tool when user asks to list, find, show, or explore files/folders in a directory, or when they mention 'desktop', 'documents', or any location path.",
 			InputSchema: json.RawMessage(`{
 				"type": "object",
 				"properties": {
-					"path": {"type": "string", "description": "目录路径"}
+					"path": {"type": "string", "description": "Directory path to list (e.g., '~/Desktop', 'C:/Users/username/Desktop', '/home/user/documents')"}
 				},
 				"required": ["path"]
 			}`),
 		},
 		{
 			Name:        "create_directory",
-			Description: "创建目录",
+			Description: "Create a new directory. Use when user asks to create, make, or set up a folder.",
 			InputSchema: json.RawMessage(`{
 				"type": "object",
 				"properties": {
-					"path": {"type": "string", "description": "目录路径"}
+					"path": {"type": "string", "description": "Path of directory to create"}
 				},
 				"required": ["path"]
 			}`),
 		},
 		{
 			Name:        "search_files",
-			Description: "搜索文件",
+			Description: "Search for files matching a pattern. Use when user asks to find, search, or locate files by name or extension.",
 			InputSchema: json.RawMessage(`{
 				"type": "object",
 				"properties": {
-					"path": {"type": "string", "description": "搜索起始路径"},
-					"pattern": {"type": "string", "description": "文件匹配模式"},
-					"recursive": {"type": "boolean", "description": "递归搜索", "default": true}
+					"path": {"type": "string", "description": "Starting path for search"},
+					"pattern": {"type": "string", "description": "File pattern to match (e.g., '*.xlsx', '*.pdf', 'report*')"},
+					"recursive": {"type": "boolean", "description": "Search recursively", "default": true}
 				},
 				"required": ["pattern"]
 			}`),
 		},
 		{
 			Name:        "get_file_info",
-			Description: "获取文件信息",
+			Description: "Get information about a file or directory. Use when user asks about file size, modification time, permissions, or other metadata.",
 			InputSchema: json.RawMessage(`{
 				"type": "object",
 				"properties": {
-					"path": {"type": "string", "description": "文件路径"}
+					"path": {"type": "string", "description": "Path to file or directory"}
 				},
 				"required": ["path"]
 			}`),
 		},
 		{
 			Name:        "move_file",
-			Description: "移动/重命名文件",
+			Description: "Move or rename a file. Use when user asks to move, rename, or relocate a file.",
 			InputSchema: json.RawMessage(`{
 				"type": "object",
 				"properties": {
-					"source": {"type": "string", "description": "源文件路径"},
-					"destination": {"type": "string", "description": "目标路径"}
+					"source": {"type": "string", "description": "Source file path"},
+					"destination": {"type": "string", "description": "Destination path"}
 				},
 				"required": ["source", "destination"]
 			}`),
 		},
 		{
 			Name:        "copy_file",
-			Description: "复制文件",
+			Description: "Copy a file. Use when user asks to copy or duplicate a file.",
 			InputSchema: json.RawMessage(`{
 				"type": "object",
 				"properties": {
-					"source": {"type": "string", "description": "源文件路径"},
-					"destination": {"type": "string", "description": "目标路径"}
+					"source": {"type": "string", "description": "Source file path"},
+					"destination": {"type": "string", "description": "Destination path"}
 				},
 				"required": ["source", "destination"]
 			}`),
@@ -191,11 +192,35 @@ func (s *FilesystemServer) validatePath(path string) error {
 	if err != nil {
 		return err
 	}
+	// 清理路径，确保格式一致
+	absPath = filepath.Clean(absPath)
 
 	for _, dir := range s.allowedDirs {
-		absDir, _ := filepath.Abs(dir)
-		if strings.HasPrefix(absPath, absDir) {
+		absDir, err := filepath.Abs(dir)
+		if err != nil {
+			continue
+		}
+		absDir = filepath.Clean(absDir)
+
+		// 使用 filepath.Rel 检查路径关系
+		rel, err := filepath.Rel(absDir, absPath)
+		if err != nil {
+			continue
+		}
+
+		// 如果相对路径不以 ".." 开头，说明 absPath 在 absDir 内部
+		if !strings.HasPrefix(rel, "..") {
 			return nil
+		}
+
+		// Windows 下大小写不敏感，额外检查
+		if runtime.GOOS == "windows" {
+			if strings.HasPrefix(strings.ToLower(absPath), strings.ToLower(absDir)+string(filepath.Separator)) {
+				return nil
+			}
+			if strings.ToLower(absPath) == strings.ToLower(absDir) {
+				return nil
+			}
 		}
 	}
 

@@ -155,4 +155,9 @@ func init() {
 	Register("notion", func() Server {
 		return NewNotionServer()
 	})
+
+	// 注册测试服务器
+	Register("test", func() Server {
+		return NewTestServer()
+	})
 }

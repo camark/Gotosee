@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/camark/Gotosee/internal/conversation"
+	"github.com/camark/Gotosee/internal/mcp"
 	"github.com/camark/Gotosee/internal/model"
 )
 
@@ -272,6 +273,23 @@ func (p *DeepSeekProvider) buildCompletionRequest(messages []conversation.Messag
 		Stream:      false,
 	}
 
+	// 添加工具调用支持
+	if tools, ok := config.ExtraParams["tools"].([]*mcp.Tool); ok && len(tools) > 0 {
+		req.Tools = make([]DeepSeekTool, len(tools))
+		for i, tool := range tools {
+			req.Tools[i] = DeepSeekTool{
+				Type: "function",
+				Function: &DeepSeekFunction{
+					Name:        tool.Name,
+					Description: tool.Description,
+					Parameters:  parseInputSchema(tool.InputSchema),
+				},
+			}
+		}
+		// 设置 tool_choice 为 auto，让模型自动决定是否使用工具
+		req.ToolChoice = "auto"
+	}
+
 	return json.Marshal(req)
 }
 
@@ -285,41 +303,85 @@ func (p *DeepSeekProvider) messageToAPI(msg conversation.Message) DeepSeekMessag
 		role = "assistant"
 	case conversation.RoleSystem:
 		role = "system"
+	case conversation.RoleTool:
+		role = "tool"
 	default:
 		role = "user"
 	}
 
 	content := ""
+	var toolCalls []DeepSeekToolCall
+
 	for _, c := range msg.Content {
 		if c.Type == conversation.MessageContentText {
 			content += c.Text
+		} else if c.Type == conversation.MessageContentToolResult {
+			// 工具结果作为 content 发送
+			content = c.ToolResult
+		} else if c.Type == conversation.MessageContentToolUse {
+			// Assistant 的工具调用转换为 tool_calls 格式
+			// DeepSeek API 要求：tool 消息必须跟在包含 tool_calls 的 assistant 消息后面
+			var args map[string]interface{}
+			if c.ToolArgs != nil {
+				json.Unmarshal(c.ToolArgs, &args)
+			} else {
+				args = map[string]interface{}{}
+			}
+			toolCalls = append(toolCalls, DeepSeekToolCall{
+				ID:   c.ToolCallID, // 使用 ToolCallID 作为工具调用 ID
+				Type: "function",
+				Function: DeepSeekFunctionCall{
+					Name:      c.ToolName,
+					Arguments: string(c.ToolArgs),
+				},
+			})
 		}
 	}
 
 	return DeepSeekMessage{
-		Role:    role,
-		Content: content,
+		Role:       role,
+		Content:    content,
+		ToolCalls:  toolCalls,
+		ToolCallID: msg.ToolCallID, // 工具结果消息需要 tool_call_id
 	}
 }
 
 // responseToMessage 转换 DeepSeek 响应为 Message。
 func (p *DeepSeekProvider) responseToMessage(resp DeepSeekCompletionResponse) conversation.Message {
-	content := conversation.MessageContent{
-		Type: conversation.MessageContentText,
-	}
-
-	if len(resp.Choices) > 0 {
-		content.Text = resp.Choices[0].Message.Content
-	}
-
-	return conversation.Message{
+	msg := conversation.Message{
 		Role: conversation.RoleAssistant,
-		Content: []conversation.MessageContent{content},
+		Content: []conversation.MessageContent{},
 		Metadata: map[string]interface{}{
 			"model": resp.Model,
 			"usage": resp.Usage,
 		},
 	}
+
+	if len(resp.Choices) > 0 {
+		choice := resp.Choices[0]
+
+		// 工具调用在 message 对象内（DeepSeek API 的格式）
+		if len(choice.Message.ToolCalls) > 0 {
+			for _, tc := range choice.Message.ToolCalls {
+				msg.Content = append(msg.Content, conversation.MessageContent{
+					Type:       conversation.MessageContentToolUse,
+					ToolName:   tc.Function.Name,
+					ToolArgs:   []byte(tc.Function.Arguments),
+					ToolCallID: tc.ID, // 保存工具调用 ID
+				})
+			}
+		}
+
+		// 如果有文本内容，也添加（DeepSeek 可能同时返回文本和工具调用）
+		if choice.Message.Content != "" {
+			msg.Content = append(msg.Content, conversation.MessageContent{
+				Type: conversation.MessageContentText,
+				Text: choice.Message.Content,
+			})
+		}
+	}
+
+	return msg
 }
 
 // ============================================================================
@@ -333,12 +395,29 @@ type DeepSeekCompletionRequest struct {
 	Temperature float64           `json:"temperature,omitempty"`
 	MaxTokens   int               `json:"max_tokens,omitempty"`
 	Stream      bool              `json:"stream,omitempty"`
+	Tools       []DeepSeekTool    `json:"tools,omitempty"`
+	ToolChoice  string            `json:"tool_choice,omitempty"`
+}
+
+// DeepSeekTool DeepSeek 工具定义。
+type DeepSeekTool struct {
+	Type     string            `json:"type"`
+	Function *DeepSeekFunction `json:"function,omitempty"`
+}
+
+// DeepSeekFunction DeepSeek 函数定义。
+type DeepSeekFunction struct {
+	Name        string                 `json:"name"`
+	Description string                 `json:"description,omitempty"`
+	Parameters  map[string]interface{} `json:"parameters,omitempty"`
 }
 
 // DeepSeekMessage DeepSeek 消息格式。
 type DeepSeekMessage struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
+	Role         string             `json:"role"`
+	Content      string             `json:"content"`
+	ToolCalls    []DeepSeekToolCall `json:"tool_calls,omitempty"`
+	ToolCallID   string             `json:"tool_call_id,omitempty"`
 }
 
 // DeepSeekCompletionResponse DeepSeek 完成响应。
@@ -355,6 +434,19 @@ type DeepSeekChoice struct {
 	Message      DeepSeekMessage `json:"message"`
 	Delta        DeepSeekDelta   `json:"delta,omitempty"`
 	FinishReason string          `json:"finish_reason"`
+}
+
+// DeepSeekToolCall DeepSeek 工具调用。
+type DeepSeekToolCall struct {
+	ID       string        `json:"id"`
+	Type     string        `json:"type"`
+	Function DeepSeekFunctionCall `json:"function"`
+}
+
+// DeepSeekFunctionCall DeepSeek 函数调用。
+type DeepSeekFunctionCall struct {
+	Name      string `json:"name"`
+	Arguments string `json:"arguments"`
 }
 
 // DeepSeekDelta DeepSeek 流式响应增量。

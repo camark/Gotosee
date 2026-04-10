@@ -25,6 +25,7 @@ type MessageContent struct {
 	ImageData  []byte             `json:"image_data,omitempty"`
 	ToolName   string             `json:"tool_name,omitempty"`
 	ToolArgs   json.RawMessage    `json:"tool_args,omitempty"`
+	ToolCallID string             `json:"tool_call_id,omitempty"`
 	ToolResult string             `json:"tool_result,omitempty"`
 	// ActionRequired 用于需要用户确认的操作
 	ActionRequired *ActionRequiredData `json:"action_required,omitempty"`
@@ -44,6 +45,7 @@ const (
 	RoleUser      MessageRole = "user"
 	RoleAssistant MessageRole = "assistant"
 	RoleSystem    MessageRole = "system"
+	RoleTool      MessageRole = "tool"
 )
 
 // Message 对话消息。

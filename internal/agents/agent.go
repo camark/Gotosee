@@ -87,6 +87,15 @@ func (a *Agent) GetRetryAttempts() uint32 {
 	return a.retryManager.Get()
 }
 
+// marshalArgs 序列化工具参数。
+func marshalArgs(args map[string]interface{}) []byte {
+	if len(args) == 0 {
+		return []byte("{}")
+	}
+	data, _ := json.Marshal(args)
+	return data
+}
+
 // Reply 处理用户消息并生成回复（核心方法）。
 func (a *Agent) Reply(ctx context.Context, messages []*conversation.Message) (<-chan AgentEvent, error) {
 	eventChan := make(chan AgentEvent, 32)
@@ -111,9 +120,10 @@ func (a *Agent) Reply(ctx context.Context, messages []*conversation.Message) (<-
 			return
 		}
 
-		// 构建消息历史副本（避免修改原始数据）
-		msgHistory := make([]*conversation.Message, len(messages))
-		copy(msgHistory, messages)
+		// 构建当前轮次的工作消息历史（只用于本轮次的工具调用）
+		// 从原始 messages 开始，不修改原始数据
+		workingHistory := make([]*conversation.Message, len(messages))
+		copy(workingHistory, messages)
 
 		// 主循环
 		maxTurns := DefaultMaxTurns
@@ -136,7 +146,7 @@ func (a *Agent) Reply(ctx context.Context, messages []*conversation.Message) (<-
 			tools := a.collectTools()
 
 			// 调用 LLM 生成回复
-			response, err := a.callLLM(ctx, provider, msgHistory, tools)
+			response, err := a.callLLM(ctx, provider, workingHistory, tools)
 			if err != nil {
 				eventChan <- &MessageEvent{
 					Message: &conversation.Message{
@@ -149,8 +159,17 @@ func (a *Agent) Reply(ctx context.Context, messages []*conversation.Message) (<-
 				return
 			}
 
-			// 发送文本回复消息
+			// 构建 Assistant 消息内容：文本 + 所有 tool_calls
+			assistantMsgContent := []conversation.MessageContent{}
+
+			// 添加文本内容（如果有）
 			if response.Content != "" {
+				assistantMsgContent = append(assistantMsgContent, conversation.MessageContent{
+					Type: conversation.MessageContentText,
+					Text: response.Content,
+				})
+
+				// 发送文本回复事件
 				eventChan <- &MessageEvent{
 					Message: &conversation.Message{
 						Role: conversation.RoleAssistant,
@@ -163,7 +182,34 @@ func (a *Agent) Reply(ctx context.Context, messages []*conversation.Message) (<-
 
 			// 处理工具调用
 			if len(response.ToolCalls) > 0 {
+				// 首先：将所有 tool_calls 添加到 Assistant 消息内容中
 				for _, toolCall := range response.ToolCalls {
+					toolCallID := toolCall.ID
+					if toolCallID == "" {
+						toolCallID = fmt.Sprintf("call_%s_%d", toolCall.Name, turn)
+					}
+
+					assistantMsgContent = append(assistantMsgContent, conversation.MessageContent{
+						Type:       conversation.MessageContentToolUse,
+						ToolName:   toolCall.Name,
+						ToolArgs:   marshalArgs(toolCall.Arguments),
+						ToolCallID: toolCallID,
+					})
+				}
+
+				// 将包含所有内容的 Assistant 消息添加到历史
+				workingHistory = append(workingHistory, &conversation.Message{
+					Role:    conversation.RoleAssistant,
+					Content: assistantMsgContent,
+				})
+
+				// 然后：依次执行每个工具，添加对应的 Tool 消息
+				for _, toolCall := range response.ToolCalls {
+					toolCallID := toolCall.ID
+					if toolCallID == "" {
+						toolCallID = fmt.Sprintf("call_%s_%d", toolCall.Name, turn)
+					}
+
 					// 发送工具调用事件
 					eventChan <- &ToolCallEvent{
 						Name:      toolCall.Name,
@@ -177,16 +223,16 @@ func (a *Agent) Reply(ctx context.Context, messages []*conversation.Message) (<-
 							Name:  toolCall.Name,
 							Error: err,
 						}
-						// 将错误添加到消息历史
-						msgHistory = append(msgHistory, &conversation.Message{
-							Role: conversation.RoleAssistant,
+						// 将错误添加到消息历史（不要 ToolName 字段）
+						workingHistory = append(workingHistory, &conversation.Message{
+							Role: conversation.RoleTool,
 							Content: []conversation.MessageContent{
 								{
 									Type:       conversation.MessageContentToolResult,
-									ToolName:   toolCall.Name,
 									ToolResult: fmt.Sprintf("执行错误：%v", err),
 								},
 							},
+							ToolCallID: toolCallID,
 						})
 					} else {
 						eventChan <- &ToolResultEvent{
@@ -194,16 +240,22 @@ func (a *Agent) Reply(ctx context.Context, messages []*conversation.Message) (<-
 							Content: result.Content,
 						}
 
-						// 将工具结果添加到消息历史
-						msgHistory = append(msgHistory, &conversation.Message{
-							Role: conversation.RoleAssistant,
+						// 将工具结果添加到消息历史（不要 ToolName 字段）
+						var toolResultText string
+						if len(result.Content) > 0 && result.Content[0].Text != "" {
+							toolResultText = result.Content[0].Text
+						} else {
+							toolResultText = "执行完成"
+						}
+						workingHistory = append(workingHistory, &conversation.Message{
+							Role: conversation.RoleTool,
 							Content: []conversation.MessageContent{
 								{
 									Type:       conversation.MessageContentToolResult,
-									ToolName:   toolCall.Name,
-									ToolResult: result.Text(),
+									ToolResult: toolResultText,
 								},
 							},
+							ToolCallID: toolCallID,
 						})
 					}
 				}
@@ -235,20 +287,36 @@ type LLMResponse struct {
 
 // ToolCall 工具调用。
 type ToolCall struct {
+	ID        string
 	Name      string
 	Arguments map[string]interface{}
 }
 
 // callLLM 调用 LLM 生成回复。
 func (a *Agent) callLLM(ctx context.Context, provider providers.Provider, messages []*conversation.Message, tools []*mcp.Tool) (*LLMResponse, error) {
-	// 转换为 providers 需要的消息格式
-	convMessages := make([]conversation.Message, len(messages))
-	for i, msg := range messages {
-		convMessages[i] = conversation.Message{
+	// 构建消息列表，首先添加系统提示词
+	convMessages := make([]conversation.Message, 0, len(messages)+1)
+
+	// 添加系统提示词，告诉 LLM 它可以使用工具
+	if len(tools) > 0 {
+		convMessages = append(convMessages, conversation.Message{
+			Role: conversation.RoleSystem,
+			Content: []conversation.MessageContent{
+				{
+					Type: conversation.MessageContentText,
+					Text: "You are an AI assistant with access to tools. WHEN THE USER ASKS ABOUT FILES, DIRECTORIES, SYSTEM INFORMATION, OR ANY DATA THAT REQUIRES TOOL ACCESS, YOU MUST CALL THE APPROPRIATE TOOL. DO NOT describe what you would do - ACTUALLY CALL THE TOOL. Use the same language as the user's message for your response.",
+				},
+			},
+		})
+	}
+
+	// 转换其余消息为 providers 需要的格式
+	for _, msg := range messages {
+		convMessages = append(convMessages, conversation.Message{
 			Role:       msg.Role,
 			Content:    msg.Content,
 			ToolCallID: msg.ToolCallID,
-		}
+		})
 	}
 
 	// 从 provider 获取模型配置
@@ -261,6 +329,14 @@ func (a *Agent) callLLM(ctx context.Context, provider providers.Provider, messag
 	}
 	if config.MaxTokens == 0 {
 		config.MaxTokens = 4096
+	}
+
+	// 将工具信息添加到 config 中（通过 ExtraParams 传递）
+	if len(tools) > 0 {
+		if config.ExtraParams == nil {
+			config.ExtraParams = make(map[string]interface{})
+		}
+		config.ExtraParams["tools"] = tools
 	}
 
 	// 调用提供商的 Complete 方法
@@ -289,11 +365,17 @@ func (a *Agent) parseLLMResponse(msg conversation.Message) (*LLMResponse, error)
 			// 解析工具调用
 			var args map[string]interface{}
 			if content.ToolArgs != nil {
+				// 尝试直接解析
 				if err := json.Unmarshal(content.ToolArgs, &args); err != nil {
-					return nil, fmt.Errorf("parse tool args: %w", err)
+					// 如果失败，尝试修复常见的 JSON 转义问题
+					fixedJSON := fixInvalidJSONEscapes(string(content.ToolArgs))
+					if err2 := json.Unmarshal([]byte(fixedJSON), &args); err2 != nil {
+						return nil, fmt.Errorf("parse tool args: %w (original error: %v)", err2, err)
+					}
 				}
 			}
 			response.ToolCalls = append(response.ToolCalls, ToolCall{
+				ID:        content.ToolCallID, // 从响应中获取工具调用 ID
 				Name:      content.ToolName,
 				Arguments: args,
 			})
@@ -301,6 +383,34 @@ func (a *Agent) parseLLMResponse(msg conversation.Message) (*LLMResponse, error)
 	}
 
 	return response, nil
+}
+
+// fixInvalidJSONEscapes 修复常见的 JSON 无效转义序列
+func fixInvalidJSONEscapes(s string) string {
+	// 替换无效的转义序列
+	// 例如: \D → D, \_ → _, 等等
+	// 但保留有效的转义序列: \", \\, \/, \b, \f, \n, \r, \t, \uXXXX
+	var result []byte
+	i := 0
+	for i < len(s) {
+		if s[i] == '\\' && i+1 < len(s) {
+			next := s[i+1]
+			// 检查是否是有效的转义字符
+			switch next {
+			case '"', '\\', '/', 'b', 'f', 'n', 'r', 't', 'u':
+				// 有效的转义序列，保留
+				result = append(result, '\\', next)
+			default:
+				// 无效的转义序列，只保留后面的字符
+				result = append(result, next)
+			}
+			i += 2
+		} else {
+			result = append(result, s[i])
+			i++
+		}
+	}
+	return string(result)
 }
 
 // collectTools 收集所有可用工具。
@@ -375,7 +485,7 @@ func (a *Agent) executeTool(ctx context.Context, call ToolCall) (*ToolCallResult
 
 		// 尝试调用工具
 		result, callErr = server.CallTool(ctx, call.Name, args)
-		if callErr == nil {
+		if callErr == nil && result != nil && !result.IsError {
 			break
 		}
 	}
@@ -387,15 +497,23 @@ func (a *Agent) executeTool(ctx context.Context, call ToolCall) (*ToolCallResult
 		}, nil
 	}
 
+	// 检查工具执行是否出错
+	if result.IsError {
+		var content []*mcp.Content
+		for _, c := range result.Content {
+			content = append(content, &c)
+		}
+		return &ToolCallResult{
+			ToolName: call.Name,
+			Content:  content,
+			Error:    fmt.Errorf("tool execution failed: %s", result.Content[0].Text),
+		}, nil
+	}
+
 	// 转换 MCP 结果为 ToolCallResult
 	content := make([]*mcp.Content, 0, len(result.Content))
 	for _, c := range result.Content {
-		content = append(content, &mcp.Content{
-			Type:     c.Type,
-			Text:     c.Text,
-			Data:     c.Data,
-			MIMEType: c.MIMEType,
-		})
+		content = append(content, &c)
 	}
 
 	return &ToolCallResult{
@@ -458,7 +576,6 @@ func (a *Agent) handleApprovalToolRequests(
 			if response, ok := requestToResponseMap[request.ID]; ok {
 				response.Content = append(response.Content, conversation.MessageContent{
 					Type:       conversation.MessageContentToolResult,
-					ToolName:   request.ToolCall.Name,
 					ToolResult: "用户已拒绝运行此工具",
 				})
 			}
@@ -470,7 +587,7 @@ func (a *Agent) handleApprovalToolRequests(
 		eventChan := make(chan AgentEvent, 1)
 		eventChan <- &MessageEvent{
 			Message: &conversation.Message{
-				Role: conversation.RoleUser,
+				Role: conversation.RoleAssistant,
 				Content: []conversation.MessageContent{
 					{
 						Type: conversation.MessageContentActionRequired,
@@ -507,7 +624,6 @@ func (a *Agent) handleApprovalToolRequests(
 			if response, ok := requestToResponseMap[request.ID]; ok {
 				response.Content = append(response.Content, conversation.MessageContent{
 					Type:       conversation.MessageContentToolResult,
-					ToolName:   request.ToolCall.Name,
 					ToolResult: "用户已拒绝运行此工具",
 				})
 			}

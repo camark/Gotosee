@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/camark/Gotosee/internal/conversation"
+	"github.com/camark/Gotosee/internal/mcp"
 	"github.com/camark/Gotosee/internal/model"
 )
 
@@ -298,6 +299,21 @@ func (p *OpenAIProvider) buildCompletionRequest(messages []conversation.Message,
 		Stream:      false,
 	}
 
+	// 添加工具调用支持
+	if tools, ok := config.ExtraParams["tools"].([]*mcp.Tool); ok && len(tools) > 0 {
+		req.Tools = make([]OpenAITool, len(tools))
+		for i, tool := range tools {
+			req.Tools[i] = OpenAITool{
+				Type: "function",
+				Function: &OpenAIFunction{
+					Name:        tool.Name,
+					Description: tool.Description,
+					Parameters:  parseInputSchema(tool.InputSchema),
+				},
+			}
+		}
+	}
+
 	return json.Marshal(req)
 }
 
@@ -418,4 +434,22 @@ type Usage struct {
 type OpenAISSEvent struct {
 	Type string          `json:"type"`
 	Data json.RawMessage `json:"data,omitempty"`
+}
+
+// parseInputSchema 解析工具输入 schema。
+func parseInputSchema(schemaData json.RawMessage) map[string]interface{} {
+	if len(schemaData) == 0 {
+		return map[string]interface{}{
+			"type":       "object",
+			"properties": map[string]interface{}{},
+		}
+	}
+	var schema map[string]interface{}
+	if err := json.Unmarshal(schemaData, &schema); err != nil {
+		return map[string]interface{}{
+			"type":       "object",
+			"properties": map[string]interface{}{},
+		}
+	}
+	return schema
 }

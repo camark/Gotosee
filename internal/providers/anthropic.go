@@ -55,14 +55,6 @@ type anthropicRequest struct {
 	MaxTokens int                `json:"max_tokens"`
 	Messages  []anthropicMessage `json:"messages"`
 	Stream    bool               `json:"stream,omitempty"`
-	Tools     []anthropicTool    `json:"tools,omitempty"`
-}
-
-// anthropicTool Anthropic 工具格式。
-type anthropicTool struct {
-	Name        string `json:"name"`
-	Description string `json:"description,omitempty"`
-	InputSchema any    `json:"input_schema,omitempty"`
 }
 
 // anthropicResponse Anthropic 响应格式。
@@ -357,13 +349,6 @@ func (p *AnthropicProvider) parseResponse(resp *anthropicResponse) (conversation
 				Type: conversation.MessageContentText,
 				Text: content.Text,
 			})
-		case "tool_use":
-			msg.Content = append(msg.Content, conversation.MessageContent{
-				Type:     conversation.MessageContentToolUse,
-				ToolName: content.Name,
-				ToolArgs: json.RawMessage(content.Input.(json.RawMessage)),
-			})
-			msg.ToolCallID = content.ID
 		}
 	}
 

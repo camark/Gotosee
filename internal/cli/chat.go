@@ -66,8 +66,9 @@ func runChat(cmd *cobra.Command, args []string) error {
 	fmt.Println("输入 'quit' 或 'exit' 退出，'clear' 清空对话，'tools' 查看可用工具")
 	fmt.Println(strings.Repeat("-", 50))
 
-	// 保存对话历史
+	// 保存对话历史（仅用于显示，Agent 模式下不传给 LLM）
 	var messages []*conversation.Message
+	const maxHistoryMessages = 10 // 最多保留 10 条历史消息
 
 	// 设置信号处理
 	sigChan := make(chan os.Signal, 1)
@@ -134,16 +135,27 @@ func runChat(cmd *cobra.Command, args []string) error {
 		}
 		messages = append(messages, userMsg)
 
+		// 截断历史消息，防止上下文过长
+		if len(messages) > maxHistoryMessages {
+			messages = messages[len(messages)-maxHistoryMessages:]
+		}
+
 		// 调用 AI
 		fmt.Print("🤖 AI：")
 
 		if useAgent && agent != nil {
 			// 使用 Agent 模式（支持工具调用）
-			eventChan, err := agent.Reply(ctx, messages)
+			// Agent 模式下，只发送当前用户消息，不发送历史消息
+			// 这样确保每次只针对当前问题回答
+			currentMessage := []*conversation.Message{userMsg}
+			eventChan, err := agent.Reply(ctx, currentMessage)
 			if err != nil {
 				fmt.Printf("\n错误：%v\n", err)
 				continue
 			}
+
+			// 用于收集 AI 的最终文本回复
+			var aiResponseText string
 
 			for event := range eventChan {
 				switch e := event.(type) {
@@ -152,6 +164,7 @@ func runChat(cmd *cobra.Command, args []string) error {
 						for _, content := range e.Message.Content {
 							if content.Type == conversation.MessageContentText {
 								fmt.Print(content.Text)
+								aiResponseText += content.Text
 							}
 						}
 					}
@@ -167,8 +180,14 @@ func runChat(cmd *cobra.Command, args []string) error {
 			}
 			fmt.Println()
 
-			// 添加 AI 回复到历史（从事件通道获取最终消息）
-			// 简化处理：将当前 messages 更新
+			// 将 AI 的最终文本回复添加到历史（仅用于显示，不传给 Agent）
+			if aiResponseText != "" {
+				aiMsg := &conversation.Message{
+					Role:    conversation.RoleAssistant,
+					Content: []conversation.MessageContent{{Type: conversation.MessageContentText, Text: aiResponseText}},
+				}
+				messages = append(messages, aiMsg)
+			}
 		} else if streamMode {
 			// 流式输出
 			stream, err := provider.Stream(ctx, messagesToSlice(messages), providerModelConfig(cfg))
