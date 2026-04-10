@@ -120,4 +120,9 @@ func init() {
 	Register("git", func() Server {
 		return NewGitServer()
 	})
+
+	// 注册文件系统服务器
+	Register("filesystem", func() Server {
+		return NewFilesystemServer(nil)
+	})
 }

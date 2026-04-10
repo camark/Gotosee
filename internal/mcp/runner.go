@@ -217,6 +217,7 @@ const (
 	McpCommandTutorial           McpCommand = "tutorial"
 	McpCommandFetch              McpCommand = "fetch"
 	McpCommandGit                McpCommand = "git"
+	McpCommandFilesystem         McpCommand = "filesystem"
 )
 
 // String 返回命令字符串。
@@ -240,6 +241,8 @@ func ParseMcpCommand(s string) (McpCommand, error) {
 		return McpCommandFetch, nil
 	case "git":
 		return McpCommandGit, nil
+	case "filesystem", "file":
+		return McpCommandFilesystem, nil
 	default:
 		return "", fmt.Errorf("unknown MCP command: %s", s)
 	}
