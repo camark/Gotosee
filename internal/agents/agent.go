@@ -3,9 +3,12 @@ package agents
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"sync"
 
 	"github.com/aaif-goose/gogo/internal/conversation"
+	"github.com/aaif-goose/gogo/internal/mcp"
 	"github.com/aaif-goose/gogo/internal/providers"
 	"github.com/aaif-goose/gogo/internal/session"
 )
@@ -90,26 +93,247 @@ func (a *Agent) GetRetryAttempts() uint32 {
 }
 
 // Reply 处理用户消息并生成回复（核心方法）。
-// 这是一个简化版本，实际实现需要更多逻辑。
 func (a *Agent) Reply(ctx context.Context, messages []*conversation.Message) (<-chan AgentEvent, error) {
 	eventChan := make(chan AgentEvent, 32)
 
-	// TODO: 实现完整的 reply 逻辑
-	// 1. 调用 LLM 生成回复
-	// 2. 解析工具调用
-	// 3. 执行工具
-	// 4. 处理结果
-	// 5. 循环直到完成
-
 	go func() {
 		defer close(eventChan)
-		// 简化实现：仅发送消息事件
-		for _, msg := range messages {
-			eventChan <- &MessageEvent{Message: msg}
+
+		// 获取提供商
+		provider := a.provider.Get()
+		if provider == nil {
+			eventChan <- &MessageEvent{
+				Message: &conversation.Message{
+					Role: conversation.RoleAssistant,
+					Content: []conversation.MessageContent{
+						{Type: conversation.MessageContentText, Text: "错误：未配置 AI 提供商"},
+					},
+				},
+			}
+			return
+		}
+
+		// 获取所有可用工具
+		tools := a.collectTools()
+
+		// 主循环
+		maxTurns := DefaultMaxTurns
+		for turn := 0; turn < int(maxTurns); turn++ {
+			select {
+			case <-ctx.Done():
+				eventChan <- &MessageEvent{
+					Message: &conversation.Message{
+						Role: conversation.RoleAssistant,
+						Content: []conversation.MessageContent{
+							{Type: conversation.MessageContentText, Text: "会话已取消"},
+						},
+					},
+				}
+				return
+			default:
+			}
+
+			// 调用 LLM 生成回复
+			response, err := a.callLLM(ctx, provider, messages, tools)
+			if err != nil {
+				eventChan <- &MessageEvent{
+					Message: &conversation.Message{
+						Role: conversation.RoleAssistant,
+						Content: []conversation.MessageContent{
+							{Type: conversation.MessageContentText, Text: fmt.Sprintf("错误：%v", err)},
+						},
+					},
+				}
+				return
+			}
+
+			// 发送回复消息
+			if response.Content != "" {
+				eventChan <- &MessageEvent{
+					Message: &conversation.Message{
+						Role: conversation.RoleAssistant,
+						Content: []conversation.MessageContent{
+							{Type: conversation.MessageContentText, Text: response.Content},
+						},
+					},
+				}
+			}
+
+			// 处理工具调用
+			if len(response.ToolCalls) > 0 {
+				for _, toolCall := range response.ToolCalls {
+					eventChan <- &ToolCallEvent{
+						Name:      toolCall.Name,
+						Arguments: toolCall.Arguments,
+					}
+
+					result, err := a.executeTool(ctx, toolCall)
+					if err != nil {
+						eventChan <- &ToolResultEvent{
+							Name:  toolCall.Name,
+							Error: err,
+						}
+					} else {
+						eventChan <- &ToolResultEvent{
+							Name:    toolCall.Name,
+							Content: result.Content,
+						}
+
+						// 将工具结果添加到消息历史
+						messages = append(messages, &conversation.Message{
+							Role: conversation.RoleAssistant,
+							Content: []conversation.MessageContent{
+								{Type: conversation.MessageContentToolResult, ToolResult: result.Text()},
+							},
+						})
+					}
+				}
+			} else {
+				// 没有工具调用，完成
+				return
+			}
+		}
+
+		eventChan <- &MessageEvent{
+			Message: &conversation.Message{
+				Role: conversation.RoleAssistant,
+				Content: []conversation.MessageContent{
+					{Type: conversation.MessageContentText, Text: fmt.Sprintf("达到最大轮次限制 (%d)", maxTurns)},
+				},
+			},
 		}
 	}()
 
 	return eventChan, nil
+}
+
+// LLMResponse LLM 响应。
+type LLMResponse struct {
+	Content   string
+	ToolCalls []ToolCall
+}
+
+// ToolCall 工具调用。
+type ToolCall struct {
+	Name      string
+	Arguments map[string]interface{}
+}
+
+// callLLM 调用 LLM 生成回复。
+func (a *Agent) callLLM(ctx context.Context, provider providers.Provider, messages []*conversation.Message, tools []*mcp.Tool) (*LLMResponse, error) {
+	// 转换为提供商消息格式
+	providerMessages := make([]*providers.Message, 0, len(messages))
+	for _, msg := range messages {
+		switch msg.Role {
+		case "user":
+			providerMessages = append(providerMessages, &providers.Message{
+				Role:    "user",
+				Content: msg.Content,
+			})
+		case "assistant":
+			providerMessages = append(providerMessages, &providers.Message{
+				Role:    "assistant",
+				Content: msg.Content,
+			})
+		case "tool":
+			providerMessages = append(providerMessages, &providers.Message{
+				Role:    "tool",
+				Content: msg.Content,
+			})
+		}
+	}
+
+	// 转换为 MCP 工具格式
+	mcpTools := make([]mcp.Tool, 0, len(tools))
+	for _, tool := range tools {
+		mcpTools = append(mcpTools, *tool)
+	}
+
+	// 调用提供商
+	resp, err := provider.Chat(ctx, providerMessages, mcpTools)
+	if err != nil {
+		return nil, err
+	}
+
+	response := &LLMResponse{
+		Content:   resp.Content,
+		ToolCalls: make([]ToolCall, 0),
+	}
+
+	// 解析工具调用
+	for _, toolCall := range resp.ToolCalls {
+		response.ToolCalls = append(response.ToolCalls, ToolCall{
+			Name:      toolCall.Name,
+			Arguments: toolCall.Arguments,
+		})
+	}
+
+	return response, nil
+}
+
+// collectTools 收集所有可用工具。
+func (a *Agent) collectTools() []*mcp.Tool {
+	var tools []*mcp.Tool
+
+	// 从扩展管理器获取工具
+	for _, tool := range a.extensionManager.ListTools() {
+		tools = append(tools, tool)
+	}
+
+	return tools
+}
+
+// executeTool 执行工具调用。
+func (a *Agent) executeTool(ctx context.Context, call ToolCall) (*ToolCallResult, error) {
+	// 从扩展管理器获取工具
+	tool, err := a.extensionManager.GetTool(call.Name)
+	if err != nil {
+		return &ToolCallResult{
+			ToolName: call.Name,
+			Error:    fmt.Errorf("tool not found: %s", call.Name),
+		}, nil
+	}
+
+	// 调用工具
+	args, _ := json.Marshal(call.Arguments)
+
+	// 遍历所有注册的 MCP 服务器，找到包含该工具的服务器
+	serverNames := mcp.List()
+	var result *mcp.ToolResult
+	for _, serverName := range serverNames {
+		server, err := mcp.Get(serverName)
+		if err != nil {
+			continue
+		}
+
+		// 尝试调用工具
+		result, err = server.CallTool(ctx, call.Name, args)
+		if err == nil {
+			break
+		}
+	}
+
+	if result == nil {
+		return &ToolCallResult{
+			ToolName: call.Name,
+			Error:    fmt.Errorf("tool not found in any server: %s", call.Name),
+		}, nil
+	}
+
+	// 转换结果
+	content := make([]*mcp.Content, 0, len(result.Content))
+	for _, c := range result.Content {
+		content = append(content, &mcp.Content{
+			Type: c.Type,
+			Text: c.Text,
+		})
+	}
+
+	return &ToolCallResult{
+		ToolName: call.Name,
+		Content:  content,
+		Error:    nil,
+	}, nil
 }
 
 // SetProvider 设置提供商。

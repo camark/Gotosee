@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 // ============================================================================
@@ -262,4 +263,38 @@ func (s *BaseServer) Initialize(ctx context.Context) (*InitializeResult, error) 
 // Shutdown 关闭服务器。
 func (s *BaseServer) Shutdown(ctx context.Context) error {
 	return nil
+}
+
+// ListTools 列出工具（默认返回空）。
+func (s *BaseServer) ListTools(ctx context.Context) ([]Tool, error) {
+	return []Tool{}, nil
+}
+
+// CallTool 调用工具（默认返回错误）。
+func (s *BaseServer) CallTool(ctx context.Context, name string, params json.RawMessage) (*ToolResult, error) {
+	return nil, ErrToolNotFound
+}
+
+// ListResources 列出资源（默认返回空）。
+func (s *BaseServer) ListResources(ctx context.Context) (*ListResourcesResult, error) {
+	return &ListResourcesResult{}, nil
+}
+
+// ReadResource 读取资源（默认返回错误）。
+func (s *BaseServer) ReadResource(ctx context.Context, uri string) (*ReadResourceResult, error) {
+	return nil, ErrResourceNotFound
+}
+
+// TextContent 将 Content 转换为文本。
+func (c *Content) TextContent() string {
+	return c.Text
+}
+
+// Text 将 ToolResult 转换为文本。
+func (t *ToolResult) Text() string {
+	var sb strings.Builder
+	for _, content := range t.Content {
+		sb.WriteString(content.Text)
+	}
+	return sb.String()
 }

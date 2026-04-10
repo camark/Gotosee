@@ -2,6 +2,7 @@
 package agents
 
 import (
+	"strings"
 	"sync"
 
 	"github.com/aaif-goose/gogo/internal/conversation"
@@ -49,6 +50,15 @@ type ToolCallResult struct {
 	ToolName string
 	Content  []*mcp.Content
 	Error    error
+}
+
+// Text 将结果转换为文本。
+func (t *ToolCallResult) Text() string {
+	var sb strings.Builder
+	for _, c := range t.Content {
+		sb.WriteString(c.Text)
+	}
+	return sb.String()
 }
 
 // ============================================================================
@@ -147,6 +157,23 @@ type HistoryReplacedEvent struct {
 }
 
 func (e HistoryReplacedEvent) isAgentEvent() {}
+
+// ToolCallEvent 工具调用事件。
+type ToolCallEvent struct {
+	Name      string
+	Arguments map[string]interface{}
+}
+
+func (e ToolCallEvent) isAgentEvent() {}
+
+// ToolResultEvent 工具结果事件。
+type ToolResultEvent struct {
+	Name    string
+	Content []*mcp.Content
+	Error   error
+}
+
+func (e ToolResultEvent) isAgentEvent() {}
 
 // ============================================================================
 // Goose 平台类型
