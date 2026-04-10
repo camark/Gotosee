@@ -4,6 +4,8 @@ package providers
 import (
 	"fmt"
 	"sync"
+
+	"github.com/aaif-goose/gogo/internal/model"
 )
 
 // Registry 提供商注册表。
@@ -106,4 +108,40 @@ func (r *Registry) Unregister(id string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	delete(r.providers, id)
+}
+
+// GetProvider 根据配置获取提供商实例。
+func GetProvider(providerType, apiKey, baseURL, modelName string) (Provider, error) {
+	switch providerType {
+	case "openai":
+		return NewOpenAIProvider(OpenAIConfig{
+			APIKey:  apiKey,
+			BaseURL: baseURL,
+		}, model.ModelConfig{
+			Provider: providerType,
+			Model:    modelName,
+		}), nil
+	case "anthropic":
+		return NewAnthropicProvider(apiKey, baseURL, &model.ModelConfig{
+			Provider: providerType,
+			Model:    modelName,
+		}), nil
+	case "ollama":
+		return NewOllamaProvider(baseURL, &model.ModelConfig{
+			Provider: providerType,
+			Model:    modelName,
+		}), nil
+	case "google":
+		return NewGoogleProvider(apiKey, baseURL, &model.ModelConfig{
+			Provider: providerType,
+			Model:    modelName,
+		}), nil
+	case "azure":
+		return NewAzureProvider(apiKey, baseURL, modelName, &model.ModelConfig{
+			Provider: providerType,
+			Model:    modelName,
+		}), nil
+	default:
+		return nil, fmt.Errorf("unknown provider type: %s", providerType)
+	}
 }
