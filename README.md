@@ -59,6 +59,7 @@ gogo/
   - [x] Process 服务器（进程管理） ✅ 新增
   - [x] Database 服务器（数据库操作） ✅ 新增
   - [x] HTTP Client 服务器（HTTP 请求） ✅ 新增
+  - [x] AutoVisualiser 服务器（图表可视化） ✅ 新增
 - [x] **goose-acp** - ACP 协议
   - [x] ACP 类型定义
   - [x] ACP 服务器
@@ -93,7 +94,6 @@ gogo/
 
 ### 待迁移
 - [ ] 更多 AI 提供商 (Bedrock, Vertex AI, Snowflake 等)
-- [ ] MCP 服务器增强 (AutoVisualiser 等)
 - [ ] 会话导出/导入功能
 - [ ] 完整的 Agent 循环（工具调度、消息处理）
 
@@ -153,11 +153,11 @@ go test ./...
 
 | 指标 | 数量 |
 |------|------|
-| Go 文件 | 75+ |
-| 代码行数 | ~21000+ |
+| Go 文件 | 76+ |
+| 代码行数 | ~22000+ |
 | 包 | 21 |
 | CLI 命令 | 10 |
-| MCP 服务器 | 13 |
+| MCP 服务器 | 14 |
 
 ## 依赖
 
