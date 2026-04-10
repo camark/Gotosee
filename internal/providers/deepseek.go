@@ -32,7 +32,10 @@ type DeepSeekConfig struct {
 }
 
 // DefaultDeepSeekBaseURL 默认 DeepSeek API 地址。
-const DefaultDeepSeekBaseURL = "https://api.deepseek.com/v1/chat/completions"
+const DefaultDeepSeekBaseURL = "https://api.deepseek.com"
+
+// DefaultDeepSeekEndpoint DeepSeek API 端点。
+const DefaultDeepSeekEndpoint = "/v1/chat/completions"
 
 // DefaultDeepSeekModel 默认 DeepSeek 模型。
 const DefaultDeepSeekModel = "deepseek-chat"
@@ -50,6 +53,10 @@ func NewDeepSeekProvider(config DeepSeekConfig, modelConfig model.ModelConfig) *
 	if baseURL == "" {
 		baseURL = DefaultDeepSeekBaseURL
 	}
+	// 移除末尾的斜杠
+	baseURL = strings.TrimSuffix(baseURL, "/")
+	// 添加 API 端点
+	apiURL := baseURL + DefaultDeepSeekEndpoint
 
 	timeout := config.Timeout
 	if timeout == 0 {
@@ -59,7 +66,7 @@ func NewDeepSeekProvider(config DeepSeekConfig, modelConfig model.ModelConfig) *
 	return &DeepSeekProvider{
 		BaseProvider: NewBaseProvider("deepseek", "DeepSeek", "DeepSeek AI 模型提供商", modelConfig),
 		apiKey:       config.APIKey,
-		baseURL:      baseURL,
+		baseURL:      apiURL,
 		httpClient: &http.Client{
 			Timeout: time.Duration(timeout) * time.Second,
 		},
@@ -206,8 +213,8 @@ func (p *DeepSeekProvider) Stream(ctx context.Context, messages []conversation.M
 				continue
 			}
 
-			if len(chunkData.Choices) > 0 && len(chunkData.Choices[0].Delta.Content) > 0 {
-				delta := chunkData.Choices[0].Delta.Content[0].Text
+			if len(chunkData.Choices) > 0 {
+				delta := chunkData.Choices[0].Delta.Content
 				if delta != "" {
 					ch <- StreamChunk{Text: delta}
 				}
@@ -347,12 +354,8 @@ type DeepSeekChoice struct {
 
 // DeepSeekDelta DeepSeek 流式响应增量。
 type DeepSeekDelta struct {
-	Content []DeepSeekContentDelta `json:"content,omitempty"`
-}
-
-// DeepSeekContentDelta 内容增量。
-type DeepSeekContentDelta struct {
-	Text string `json:"text"`
+	Role    string `json:"role,omitempty"`
+	Content string `json:"content,omitempty"`
 }
 
 // DeepSeekUsage DeepSeek 使用统计。
