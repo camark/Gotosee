@@ -150,6 +150,30 @@ go build ./cmd/goosed    # 构建服务器
 go test ./...
 ```
 
+## 使用示例
+
+### Chat 命令（支持工具调用）
+
+```bash
+# 基础对话
+go run ./cmd/goose chat
+
+# 启用 Agent 模式（支持工具调用）
+go run ./cmd/goose chat --agent
+
+# 指定提供商和模型
+go run ./cmd/goose chat -p openai -m gpt-4o --agent
+
+# 查看可用工具
+在对话中输入：tools
+```
+
+### Agent 模式功能
+- 🤖 **自动工具调用** - AI 可以自动调用已注册的 MCP 工具
+- 🔧 **工具列表查看** - 输入 `tools` 查看当前可用工具
+- 💬 **多轮对话** - 支持完整的对话历史和多轮交互
+- 🛑 **退出命令** - 输入 `quit` 或 `exit` 退出对话
+
 ## 模块详情
 
 ### goose-server 模块

@@ -330,6 +330,11 @@ func (a *Agent) collectTools() []*mcp.Tool {
 	return tools
 }
 
+// CollectTools 收集所有可用工具（公开方法）。
+func (a *Agent) CollectTools() []*mcp.Tool {
+	return a.collectTools()
+}
+
 // executeTool 执行工具调用。
 func (a *Agent) executeTool(ctx context.Context, call ToolCall) (*ToolCallResult, error) {
 	// 参数验证
