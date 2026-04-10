@@ -2,12 +2,14 @@
 package providers
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/aaif-goose/gogo/internal/conversation"
@@ -146,11 +148,92 @@ func (p *OpenAIProvider) Stream(ctx context.Context, messages []conversation.Mes
 
 	ch := make(chan StreamChunk, 32)
 
+	// 构建流式请求
+	reqBody, err := p.buildCompletionRequest(messages, config)
+	if err != nil {
+		close(ch)
+		return nil, err
+	}
+
+	// 修改为流式模式
+	var streamReq map[string]interface{}
+	if err := json.Unmarshal(reqBody, &streamReq); err != nil {
+		close(ch)
+		return nil, err
+	}
+	streamReq["stream"] = true
+
+	reqBody, err = json.Marshal(streamReq)
+	if err != nil {
+		close(ch)
+		return nil, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", p.baseURL, bytes.NewReader(reqBody))
+	if err != nil {
+		close(ch)
+		return nil, err
+	}
+
+	// 设置请求头
+	p.setRequestHeaders(req)
+	req.Header.Set("Accept", "text/event-stream")
+	req.Header.Set("Cache-Control", "no-cache")
+
+	resp, err := p.httpClient.Do(req)
+	if err != nil {
+		close(ch)
+		return nil, err
+	}
+
+	// 启动 goroutine 处理流式响应
 	go func() {
+		defer resp.Body.Close()
 		defer close(ch)
 
-		// TODO: 实现流式请求
-		ch <- StreamChunk{Done: true}
+		reader := bufio.NewReader(resp.Body)
+		for {
+			select {
+			case <-ctx.Done():
+				ch <- StreamChunk{Done: true, Err: ctx.Err()}
+				return
+			default:
+			}
+
+			line, err := reader.ReadBytes('\n')
+			if err != nil {
+				if err == io.EOF {
+					ch <- StreamChunk{Done: true}
+					return
+				}
+				ch <- StreamChunk{Done: true, Err: err}
+				return
+			}
+
+			lineStr := strings.TrimSpace(string(line))
+			if !strings.HasPrefix(lineStr, "data: ") {
+				continue
+			}
+
+			dataStr := strings.TrimPrefix(lineStr, "data: ")
+			if dataStr == "[DONE]" {
+				ch <- StreamChunk{Done: true}
+				return
+			}
+
+			// 解析 SSE 数据
+			var chunkData OpenAICompletionResponse
+			if err := json.Unmarshal([]byte(dataStr), &chunkData); err != nil {
+				continue
+			}
+
+			if len(chunkData.Choices) > 0 && len(chunkData.Choices[0].Delta.Content) > 0 {
+				delta := chunkData.Choices[0].Delta.Content[0].Text
+				if delta != "" {
+					ch <- StreamChunk{Text: delta}
+				}
+			}
+		}
 	}()
 
 	return ch, nil
@@ -305,7 +388,18 @@ type OpenAICompletionResponse struct {
 type Choice struct {
 	Index        int              `json:"index"`
 	Message      OpenAIMessage    `json:"message"`
+	Delta        OpenAIDelta      `json:"delta,omitempty"`
 	FinishReason string           `json:"finish_reason"`
+}
+
+// OpenAIDelta OpenAI 流式响应增量。
+type OpenAIDelta struct {
+	Content []ContentDelta `json:"content,omitempty"`
+}
+
+// ContentDelta 内容增量。
+type ContentDelta struct {
+	Text string `json:"text"`
 }
 
 // Usage OpenAI 使用统计。
