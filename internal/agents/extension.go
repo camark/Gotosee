@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/aaif-goose/gogo/internal/mcp"
+	"github.com/aaif-goose/gogo/internal/session"
 )
 
 // ExtensionConfig 扩展配置。
@@ -248,4 +249,57 @@ func (em *ExtensionManager) GetPlatform() string {
 	em.mu.RLock()
 	defer em.mu.RUnlock()
 	return em.platform
+}
+
+// GetExtensionConfigs 获取所有扩展配置。
+func (em *ExtensionManager) GetExtensionConfigs() []*ExtensionConfig {
+	em.mu.RLock()
+	defer em.mu.RUnlock()
+
+	result := make([]*ExtensionConfig, 0, len(em.extensions))
+	for _, ext := range em.extensions {
+		result = append(result, ext)
+	}
+	return result
+}
+
+// SaveExtensionState 保存扩展状态到会话。
+func (em *ExtensionManager) SaveExtensionState(sess *session.Session) error {
+	configs := em.GetExtensionConfigs()
+	state := NewEnabledExtensionsState(configs)
+
+	if sess.ExtensionData == nil {
+		sess.ExtensionData = session.NewExtensionData()
+	}
+
+	return state.ToExtensionData(sess.ExtensionData)
+}
+
+// LoadExtensionState 从会话加载扩展状态。
+func (em *ExtensionManager) LoadExtensionState(sess *session.Session) error {
+	state, err := FromExtensionData(sess.ExtensionData)
+	if err != nil {
+		return err
+	}
+
+	em.mu.Lock()
+	defer em.mu.Unlock()
+
+	for _, extState := range state.Extensions {
+		config := &ExtensionConfig{
+			Name:       extState.Name,
+			Enabled:    extState.Enabled,
+			ConfigData: make(map[string]interface{}),
+		}
+
+		if extState.Config != nil {
+			if cfgMap, ok := extState.Config.(map[string]interface{}); ok {
+				config.ConfigData = cfgMap
+			}
+		}
+
+		em.extensions[extState.Name] = config
+	}
+
+	return nil
 }
