@@ -414,7 +414,6 @@ func (s *DatabaseServer) describeTable(params json.RawMessage) (*ToolResult, err
 	}
 	defer rows.Close()
 
-	cols := []string{"cid", "name", "type", "notnull", "default", "pk"}
 	var results []map[string]interface{}
 
 	for rows.Next() {

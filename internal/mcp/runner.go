@@ -211,8 +211,8 @@ func (r *MCPServerRunner) handleResourcesRead(ctx context.Context, params json.R
 type McpCommand string
 
 const (
-	McpCommandAutoVisualiser     McpCommand = "autovisualiser"
-	McpCommandComputerController McpCommand = "computercontroller"
+	McpCommandAutoVisualiser     McpCommand = "auto-visualiser"
+	McpCommandComputerController McpCommand = "computer-controller"
 	McpCommandMemory             McpCommand = "memory"
 	McpCommandTutorial           McpCommand = "tutorial"
 	McpCommandFetch              McpCommand = "fetch"
@@ -234,9 +234,9 @@ func (c McpCommand) String() string {
 func ParseMcpCommand(s string) (McpCommand, error) {
 	s = strings.ToLower(strings.TrimSpace(s))
 	switch s {
-	case "autovisualiser":
+	case "auto-visualiser", "autovisualiser":
 		return McpCommandAutoVisualiser, nil
-	case "computercontroller", "computer_controller":
+	case "computer-controller", "computer_controller":
 		return McpCommandComputerController, nil
 	case "memory":
 		return McpCommandMemory, nil

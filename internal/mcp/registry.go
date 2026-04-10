@@ -145,4 +145,9 @@ func init() {
 	Register("http-client", func() Server {
 		return NewHttpClientServer()
 	})
+
+	// 注册 AutoVisualiser 服务器
+	Register("auto-visualiser", func() Server {
+		return NewAutoVisualiserServer()
+	})
 }
