@@ -222,6 +222,7 @@ const (
 	McpCommandEnvironment        McpCommand = "environment"
 	McpCommandProcess            McpCommand = "process"
 	McpCommandDatabase           McpCommand = "database"
+	McpCommandHttpClient         McpCommand = "http-client"
 )
 
 // String 返回命令字符串。
@@ -255,6 +256,8 @@ func ParseMcpCommand(s string) (McpCommand, error) {
 		return McpCommandProcess, nil
 	case "database", "db":
 		return McpCommandDatabase, nil
+	case "http-client", "http", "curl":
+		return McpCommandHttpClient, nil
 	default:
 		return "", fmt.Errorf("unknown MCP command: %s", s)
 	}

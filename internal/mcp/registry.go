@@ -140,4 +140,9 @@ func init() {
 	Register("database", func() Server {
 		return NewDatabaseServer()
 	})
+
+	// 注册 HTTP 客户端服务器
+	Register("http-client", func() Server {
+		return NewHttpClientServer()
+	})
 }
