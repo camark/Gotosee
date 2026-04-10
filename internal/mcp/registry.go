@@ -93,12 +93,7 @@ func List() []string {
 func init() {
 	// 注册计算机控制服务器
 	Register("computer-controller", func() Server {
-		return NewComputerController()
-	})
-
-	// 注册文档工具服务器
-	Register("doctools", func() Server {
-		return NewDocTools()
+		return NewComputerControllerServer()
 	})
 
 	// 注册记忆服务器

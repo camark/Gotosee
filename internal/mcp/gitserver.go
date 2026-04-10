@@ -188,6 +188,21 @@ func (s *GitServer) runGit(args ...string) (string, error) {
 	return string(output), nil
 }
 
+// runGitErr 执行 Git 命令（不返回输出）。
+func (s *GitServer) runGitErr(args ...string) error {
+	cmd := exec.Command("git", args...)
+	cmd.Dir = s.workDir
+	if s.workDir == "" {
+		cmd.Dir, _ = os.Getwd()
+	}
+
+	_, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("git %s: %w", strings.Join(args, " "), err)
+	}
+	return nil
+}
+
 // gitStatus 查看状态。
 func (s *GitServer) gitStatus(params json.RawMessage) (*ToolResult, error) {
 	var p struct {
@@ -335,8 +350,7 @@ func (s *GitServer) gitAdd(params json.RawMessage) (*ToolResult, error) {
 	}
 
 	args := append([]string{"add"}, p.Files...)
-	output, err := s.runGit(args...)
-	if err != nil {
+	if err := s.runGitErr(args...); err != nil {
 		return &ToolResult{
 			IsError: true,
 			Content: []Content{{Type: "text", Text: fmt.Sprintf("执行失败：%v", err)}},
@@ -375,8 +389,7 @@ func (s *GitServer) gitCommit(params json.RawMessage) (*ToolResult, error) {
 	}
 	args = append(args, "-m", p.Message)
 
-	output, err := s.runGit(args...)
-	if err != nil {
+	if err := s.runGitErr(args...); err != nil {
 		return &ToolResult{
 			IsError: true,
 			Content: []Content{{Type: "text", Text: fmt.Sprintf("执行失败：%v", err)}},
