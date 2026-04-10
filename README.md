@@ -131,11 +131,40 @@ gogo/
 
 ## 构建
 
+### Windows
+
 ```bash
 cd C:\git\gogo
-go build ./...           # 构建所有
-go build ./cmd/goose     # 构建 CLI
-go build ./cmd/goosed    # 构建服务器
+# 推荐：禁用 CGO 生成纯静态可执行文件（无依赖问题）
+$env:CGO_ENABLED=0
+go build -o goose.exe ./cmd/goose     # 构建 CLI
+go build -o goosed.exe ./cmd/goosed   # 构建服务器
+
+# 或者直接运行
+go run ./cmd/goose version
+```
+
+### Linux/macOS
+
+```bash
+cd C:\git\gogo
+CGO_ENABLED=0 go build -o goose ./cmd/goose
+CGO_ENABLED=0 go build -o goosed ./cmd/goosed
+```
+
+### 常见问题
+
+**Q: 生成的 exe 文件无法执行？**
+
+A: 确保禁用 CGO 编译：
+```bash
+# Windows PowerShell
+$env:CGO_ENABLED=0
+go build -o goose.exe ./cmd/goose
+
+# Git Bash / CMD
+set CGO_ENABLED=0
+go build -o goose.exe ./cmd/goose
 ```
 
 ## 运行服务器

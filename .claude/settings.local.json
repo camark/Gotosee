@@ -28,7 +28,14 @@
       "Bash(/c/git/gogo/goose.exe doctor:*)",
       "Bash(curl -s http://localhost:11434/api/tags)",
       "Bash(curl -X POST https://api.deepseek.com/v1/chat/completions -H \"Content-Type: application/json\" -H \"Authorization: Bearer sk-cc0539974fa64cc38d5a591767faecc9\" -d '{\"model\":\"deepseek-chat\",\"messages\":[{\"role\":\"user\",\"content\":\"hi\"}]}')",
-      "Bash(curl -X POST \"https://api.deepseek.com/v1/chat/completions\" -H \"Content-Type: application/json\" -H \"Authorization: Bearer sk-cc0539974fa64cc38d5a591767faecc9\" -d '{\"model\":\"deepseek-chat\",\"messages\":[{\"role\":\"user\",\"content\":\"hi\"}],\"stream\":true}')"
+      "Bash(curl -X POST \"https://api.deepseek.com/v1/chat/completions\" -H \"Content-Type: application/json\" -H \"Authorization: Bearer sk-cc0539974fa64cc38d5a591767faecc9\" -d '{\"model\":\"deepseek-chat\",\"messages\":[{\"role\":\"user\",\"content\":\"hi\"}],\"stream\":true}')",
+      "Bash(Start-Process:*)",
+      "Bash(C:/git/gogo/goose.exe:*)",
+      "Bash(wine C:/git/gogo/goose.exe --help)",
+      "Bash(powershell.exe:*)",
+      "Bash(wslcmd -c \"/mnt/c/git/gogo/goose.exe --help\")",
+      "Bash(./goose.exe version:*)",
+      "Bash(./goose.exe chat:*)"
     ]
   }
 }
