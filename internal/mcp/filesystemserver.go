@@ -110,7 +110,7 @@ func (s *FilesystemServer) ListTools(ctx context.Context) ([]Tool, error) {
 				"properties": {
 					"path": {"type": "string", "description": "Starting path for search"},
 					"pattern": {"type": "string", "description": "File pattern to match (e.g., '*.xlsx', '*.pdf', 'report*')"},
-					"recursive": {"type": "boolean", "description": "Search recursively", "default": true}
+					"recursive": {"type": "boolean", "description": "Search recursively", "default": false}
 				},
 				"required": ["pattern"]
 			}`),
@@ -406,28 +406,46 @@ func (s *FilesystemServer) searchFiles(params json.RawMessage) (*ToolResult, err
 
 	var matches []string
 
-	var walkFn filepath.WalkFunc = func(path string, info os.FileInfo, err error) error {
-		if err != nil {
+	if p.Recursive {
+		// 递归搜索
+		var walkFn filepath.WalkFunc = func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return nil
+			}
+			if !info.IsDir() {
+				matched, _ := filepath.Match(p.Pattern, info.Name())
+				if matched {
+					matches = append(matches, path)
+				}
+			}
 			return nil
 		}
 
-		matched, _ := filepath.Match(p.Pattern, info.Name())
-		if matched {
-			matches = append(matches, path)
+		if err := filepath.Walk(p.Path, walkFn); err != nil {
+			return &ToolResult{
+				IsError: true,
+				Content: []Content{{Type: "text", Text: fmt.Sprintf("搜索失败：%v", err)}},
+			}, nil
+		}
+	} else {
+		// 非递归搜索，只搜索当前目录
+		entries, err := os.ReadDir(p.Path)
+		if err != nil {
+			return &ToolResult{
+				IsError: true,
+				Content: []Content{{Type: "text", Text: fmt.Sprintf("读取目录失败：%v", err)}},
+			}, nil
 		}
 
-		if !p.Recursive && !info.IsDir() {
-			return filepath.SkipDir
+		for _, entry := range entries {
+			if !entry.IsDir() {
+				matched, _ := filepath.Match(p.Pattern, entry.Name())
+				if matched {
+					fullPath := filepath.Join(p.Path, entry.Name())
+					matches = append(matches, fullPath)
+				}
+			}
 		}
-
-		return nil
-	}
-
-	if err := filepath.Walk(p.Path, walkFn); err != nil {
-		return &ToolResult{
-			IsError: true,
-			Content: []Content{{Type: "text", Text: fmt.Sprintf("搜索失败：%v", err)}},
-		}, nil
 	}
 
 	var sb strings.Builder
