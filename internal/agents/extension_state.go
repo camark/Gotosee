@@ -70,7 +70,7 @@ func FromExtensionData(data *session.ExtensionData) (*EnabledExtensionsState, er
 
 // ExtensionStateCache 扩展状态缓存（线程安全）。
 type ExtensionStateCache struct {
-	mu    sync.RWMutex
+	mu     sync.RWMutex
 	states map[string]*EnabledExtensionsState // session_id -> state
 }
 

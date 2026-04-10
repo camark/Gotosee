@@ -17,21 +17,21 @@ import (
 
 // Agent 主要的 goose 代理。
 type Agent struct {
-	provider                 *SharedProvider
-	config                   *AgentConfig
-	currentGooseMode         sync.RWMutex
-	extensionManager         *ExtensionManager
-	finalOutputTool          *FinalOutputTool
-	frontendTools            sync.Map // map[string]*FrontendTool
-	frontendInstructions     *string
-	promptManager            sync.Mutex
-	toolResultTx             ToolResultReceiver
-	toolResultRx             *ToolResultReceiver
-	retryManager             *RetryManager
-	lifecycleManager         *LifecycleManager
-	toolConfirmationRouter   *ToolConfirmationRouter
-	permissionManager        *permission.PermissionManager
-	container                *Container
+	provider               *SharedProvider
+	config                 *AgentConfig
+	currentGooseMode       sync.RWMutex
+	extensionManager       *ExtensionManager
+	finalOutputTool        *FinalOutputTool
+	frontendTools          sync.Map // map[string]*FrontendTool
+	frontendInstructions   *string
+	promptManager          sync.Mutex
+	toolResultTx           ToolResultReceiver
+	toolResultRx           *ToolResultReceiver
+	retryManager           *RetryManager
+	lifecycleManager       *LifecycleManager
+	toolConfirmationRouter *ToolConfirmationRouter
+	permissionManager      *permission.PermissionManager
+	container              *Container
 }
 
 // Container 容器（用于隔离执行环境）。

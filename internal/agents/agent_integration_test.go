@@ -15,17 +15,19 @@ import (
 
 // MockProvider 模拟提供商用于测试。
 type MockProvider struct {
-	mu            sync.Mutex
-	lastMessages  []conversation.Message
-	lastConfig    model.ModelConfig
-	completeFunc  func(ctx context.Context, messages []conversation.Message, config model.ModelConfig) (conversation.Message, error)
-	streamFunc    func(ctx context.Context, messages []conversation.Message, config model.ModelConfig) (<-chan providers.StreamChunk, error)
+	mu           sync.Mutex
+	lastMessages []conversation.Message
+	lastConfig   model.ModelConfig
+	completeFunc func(ctx context.Context, messages []conversation.Message, config model.ModelConfig) (conversation.Message, error)
+	streamFunc   func(ctx context.Context, messages []conversation.Message, config model.ModelConfig) (<-chan providers.StreamChunk, error)
 }
 
-func (p *MockProvider) Name() string                              { return "mock" }
-func (p *MockProvider) Description() string                       { return "Mock provider for testing" }
-func (p *MockProvider) Validate() error                           { return nil }
-func (p *MockProvider) GetModelConfig() model.ModelConfig         { return model.ModelConfig{ContextLimit: 128000} }
+func (p *MockProvider) Name() string        { return "mock" }
+func (p *MockProvider) Description() string { return "Mock provider for testing" }
+func (p *MockProvider) Validate() error     { return nil }
+func (p *MockProvider) GetModelConfig() model.ModelConfig {
+	return model.ModelConfig{ContextLimit: 128000}
+}
 
 func (p *MockProvider) Complete(ctx context.Context, messages []conversation.Message, config model.ModelConfig) (conversation.Message, error) {
 	p.mu.Lock()
