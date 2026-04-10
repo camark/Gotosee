@@ -34,11 +34,6 @@ type Agent struct {
 	container                *Container
 }
 
-// FinalOutputTool 最终输出工具（简化版）。
-type FinalOutputTool struct {
-	// TODO: 实现最终输出逻辑
-}
-
 // Container 容器（用于隔离执行环境）。
 type Container struct {
 	// TODO: 实现容器逻辑
