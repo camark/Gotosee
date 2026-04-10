@@ -130,4 +130,9 @@ func init() {
 	Register("environment", func() Server {
 		return NewEnvironmentServer()
 	})
+
+	// 注册进程服务器
+	Register("process", func() Server {
+		return NewProcessServer()
+	})
 }
