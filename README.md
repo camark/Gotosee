@@ -70,7 +70,7 @@ gogo/
   - [x] 扩展管理器 (`internal/agents/extension.go`)
 - [x] **goose-cli** - 命令行接口骨架 (2026-04-10)
   - [x] CLI 框架 (`internal/cli/cli.go`)
-  - [x] configure 命令
+  - [x] configure 命令 (配置向导)
   - [x] session 命令 (列表、删除)
   - [x] recipe 命令 (列表、验证、解释)
   - [x] schedule 命令 (列表、添加、删除)
@@ -78,6 +78,7 @@ gogo/
   - [x] project 命令
   - [x] doctor 命令 (诊断)
   - [x] info 命令 (信息)
+  - [x] chat 命令 (交互式对话) ✅ 新增
 
 ### 待迁移
 - [ ] 更多 AI 提供商 (Anthropic, Google, Ollama 等)
