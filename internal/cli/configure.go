@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -114,7 +115,7 @@ func runConfigure() error {
 
 	fmt.Print("请输入选项 (1-6): ")
 	providerChoice, _ := reader.ReadString('\n')
-	providerChoice = providerChoice[:len(providerChoice)-1]
+	providerChoice = strings.TrimSpace(providerChoice)
 
 	provider := ""
 	switch providerChoice {
@@ -142,14 +143,14 @@ func runConfigure() error {
 	if provider == "ollama" {
 		fmt.Print("请输入模型名称 (默认：llama3.1): ")
 		model, _ = reader.ReadString('\n')
-		model = model[:len(model)-1]
+		model = strings.TrimSpace(model)
 		if model == "" {
 			model = "llama3.1"
 		}
 	} else {
 		fmt.Print("请输入模型名称 (默认：gpt-4o): ")
 		model, _ = reader.ReadString('\n')
-		model = model[:len(model)-1]
+		model = strings.TrimSpace(model)
 		if model == "" {
 			model = "gpt-4o"
 		}
@@ -160,20 +161,20 @@ func runConfigure() error {
 	if provider != "ollama" {
 		fmt.Print("请输入 API Key: ")
 		apiKey, _ = reader.ReadString('\n')
-		apiKey = apiKey[:len(apiKey)-1]
+		apiKey = strings.TrimSpace(apiKey)
 	}
 
 	// 获取 BaseURL (可选)
 	fmt.Print("请输入 API Base URL (可选，直接回车使用默认): ")
 	baseURL, _ := reader.ReadString('\n')
-	baseURL = baseURL[:len(baseURL)-1]
+	baseURL = strings.TrimSpace(baseURL)
 
 	// Azure 需要 deployment
 	var deployment string
 	if provider == "azure" {
 		fmt.Print("请输入 Azure Deployment 名称：")
 		deployment, _ = reader.ReadString('\n')
-		deployment = deployment[:len(deployment)-1]
+		deployment = strings.TrimSpace(deployment)
 	}
 
 	// 保存配置
