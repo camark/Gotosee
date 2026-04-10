@@ -150,4 +150,9 @@ func init() {
 	Register("auto-visualiser", func() Server {
 		return NewAutoVisualiserServer()
 	})
+
+	// 注册 Notion 服务器
+	Register("notion", func() Server {
+		return NewNotionServer()
+	})
 }
