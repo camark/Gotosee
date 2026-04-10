@@ -41,6 +41,7 @@ gogo/
   - [x] Ollama 提供商实现 (`internal/providers/ollama.go`)
   - [x] Google 提供商实现 (`internal/providers/google.go`)
   - [x] Azure 提供商实现 (`internal/providers/azure.go`)
+  - [x] OpenRouter 提供商实现 (`internal/providers/openrouter.go`)
 - [x] **CLI/服务器骨架** (`cmd/goose/main.go`, `cmd/goosed/server.go`)
 - [x] **goose-mcp** - MCP 扩展
   - [x] MCP 服务器基础类型
