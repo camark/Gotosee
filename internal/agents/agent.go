@@ -10,25 +10,28 @@ import (
 	"github.com/aaif-goose/gogo/internal/conversation"
 	"github.com/aaif-goose/gogo/internal/mcp"
 	"github.com/aaif-goose/gogo/internal/model"
+	"github.com/aaif-goose/gogo/internal/permission"
 	"github.com/aaif-goose/gogo/internal/providers"
 	"github.com/aaif-goose/gogo/internal/session"
 )
 
 // Agent 主要的 goose 代理。
 type Agent struct {
-	provider             *SharedProvider
-	config               *AgentConfig
-	currentGooseMode     sync.RWMutex
-	extensionManager     *ExtensionManager
-	finalOutputTool      *FinalOutputTool
-	frontendTools        sync.Map // map[string]*FrontendTool
-	frontendInstructions *string
-	promptManager        sync.Mutex
-	toolResultTx         ToolResultReceiver
-	toolResultRx         *ToolResultReceiver
-	retryManager         *RetryManager
-	lifecycleManager     *LifecycleManager
-	container            *Container
+	provider                 *SharedProvider
+	config                   *AgentConfig
+	currentGooseMode         sync.RWMutex
+	extensionManager         *ExtensionManager
+	finalOutputTool          *FinalOutputTool
+	frontendTools            sync.Map // map[string]*FrontendTool
+	frontendInstructions     *string
+	promptManager            sync.Mutex
+	toolResultTx             ToolResultReceiver
+	toolResultRx             *ToolResultReceiver
+	retryManager             *RetryManager
+	lifecycleManager         *LifecycleManager
+	toolConfirmationRouter   *ToolConfirmationRouter
+	permissionManager        *permission.PermissionManager
+	container                *Container
 }
 
 // FinalOutputTool 最终输出工具（简化版）。
@@ -59,17 +62,21 @@ func NewAgentWithConfig(config *AgentConfig) *Agent {
 
 	retryManager := NewRetryManager()
 	lifecycleManager := NewLifecycleManager()
+	toolConfirmationRouter := NewToolConfirmationRouter()
+	permissionManager := permission.NewPermissionManager()
 
 	return &Agent{
-		provider:         NewSharedProvider(nil),
-		config:           config,
-		extensionManager: NewExtensionManager(),
-		finalOutputTool:  nil,
-		toolResultTx:     toolChan,
-		toolResultRx:     &toolChan,
-		retryManager:     retryManager,
-		lifecycleManager: lifecycleManager,
-		container:        nil,
+		provider:               NewSharedProvider(nil),
+		config:                 config,
+		extensionManager:       NewExtensionManager(),
+		finalOutputTool:        nil,
+		toolResultTx:           toolChan,
+		toolResultRx:           &toolChan,
+		retryManager:           retryManager,
+		lifecycleManager:       lifecycleManager,
+		toolConfirmationRouter: toolConfirmationRouter,
+		permissionManager:      permissionManager,
+		container:              nil,
 	}
 }
 
