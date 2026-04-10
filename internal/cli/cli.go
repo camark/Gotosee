@@ -43,6 +43,7 @@ func init() {
 		doctorCmd,
 		infoCmd,
 		versionCmd,
+		chatCmd,
 	)
 }
 
