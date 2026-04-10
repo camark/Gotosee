@@ -141,6 +141,11 @@ func GetProvider(providerType, apiKey, baseURL, modelName string) (Provider, err
 			Provider: providerType,
 			Model:    modelName,
 		}), nil
+	case "openrouter":
+		return NewOpenRouterProvider(apiKey, &model.ModelConfig{
+			Provider: providerType,
+			Model:    modelName,
+		}), nil
 	default:
 		return nil, fmt.Errorf("unknown provider type: %s", providerType)
 	}
