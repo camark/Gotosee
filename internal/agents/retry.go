@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
+	"runtime"
 	"sync"
 	"time"
 )
@@ -113,7 +114,12 @@ func (rm *RetryManager) CheckSuccess(checks []SuccessCheck) bool {
 
 // executeSuccessCheck 执行单个成功检查。
 func executeSuccessCheck(check SuccessCheck) bool {
-	cmd := exec.Command("sh", "-c", check.Command)
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("cmd", "/c", check.Command)
+	} else {
+		cmd = exec.Command("sh", "-c", check.Command)
+	}
 	err := cmd.Run()
 	return err == nil
 }
@@ -123,7 +129,12 @@ func execCmdWithTimeout(command string, timeoutSeconds uint64) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutSeconds)*time.Second)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, "sh", "-c", command)
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.CommandContext(ctx, "cmd", "/c", command)
+	} else {
+		cmd = exec.CommandContext(ctx, "sh", "-c", command)
+	}
 	cmd.Run()
 }
 

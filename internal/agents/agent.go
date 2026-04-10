@@ -18,7 +18,7 @@ import (
 type Agent struct {
 	provider             *SharedProvider
 	config               *AgentConfig
-	currentGooseMode     sync.Mutex
+	currentGooseMode     sync.RWMutex
 	extensionManager     *ExtensionManager
 	finalOutputTool      *FinalOutputTool
 	frontendTools        sync.Map // map[string]*FrontendTool
@@ -55,8 +55,7 @@ func NewAgent() *Agent {
 
 // NewAgentWithConfig 使用配置创建 Agent。
 func NewAgentWithConfig(config *AgentConfig) *Agent {
-	toolTx := make(ToolResultReceiver, 32)
-	toolRx := toolTx
+	toolChan := make(ToolResultReceiver, 32)
 
 	retryManager := NewRetryManager()
 	lifecycleManager := NewLifecycleManager()
@@ -66,8 +65,8 @@ func NewAgentWithConfig(config *AgentConfig) *Agent {
 		config:           config,
 		extensionManager: NewExtensionManager(),
 		finalOutputTool:  nil,
-		toolResultTx:     toolTx,
-		toolResultRx:     &toolRx,
+		toolResultTx:     toolChan,
+		toolResultRx:     &toolChan,
 		retryManager:     retryManager,
 		lifecycleManager: lifecycleManager,
 		container:        nil,
@@ -428,7 +427,7 @@ func (a *Agent) SwitchGooseMode(mode string) {
 
 // GetGooseMode 获取当前 Goose 模式。
 func (a *Agent) GetGooseMode() string {
-	a.currentGooseMode.Lock()
-	defer a.currentGooseMode.Unlock()
+	a.currentGooseMode.RLock()
+	defer a.currentGooseMode.RUnlock()
 	return a.config.GooseMode
 }
