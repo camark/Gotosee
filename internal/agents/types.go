@@ -193,12 +193,26 @@ const (
 
 // AgentConfig Agent 配置。
 type AgentConfig struct {
-	SessionManager      *session.SessionManager
-	PermissionManager   interface{} // TODO: 实现 permission manager
-	SchedulerService    interface{} // TODO: 实现 scheduler trait
-	GooseMode           string
+	SessionManager       *session.SessionManager
+	PermissionManager    interface{} // TODO: 实现 permission manager
+	SchedulerService     interface{} // TODO: 实现 scheduler trait
+	GooseMode            string
 	DisableSessionNaming bool
-	GoosePlatform       GoosePlatform
+	GoosePlatform        GoosePlatform
+	MaxTurns             uint32 // 自定义最大轮次
+	Timeout              int64  // 超时时间（秒）
+	RetryConfig          *RetryConfig
+}
+
+// Validate 验证配置。
+func (c *AgentConfig) Validate() error {
+	if c.SessionManager == nil {
+		return &ConfigError{Field: "SessionManager", Message: "is required"}
+	}
+	if c.MaxTurns == 0 {
+		c.MaxTurns = DefaultMaxTurns
+	}
+	return nil
 }
 
 // NewAgentConfig 创建 Agent 配置。

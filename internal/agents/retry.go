@@ -129,6 +129,6 @@ func execCmdWithTimeout(command string, timeoutSeconds uint64) {
 
 // 默认常量
 const (
-	DEFAULT_RETRY_TIMEOUT_SECONDS       uint64 = 300 // 5 分钟
-	DEFAULT_ON_FAILURE_TIMEOUT_SECONDS  uint64 = 600 // 10 分钟
+	DEFAULT_RETRY_TIMEOUT_SECONDS      uint64 = 300 // 5 分钟
+	DEFAULT_ON_FAILURE_TIMEOUT_SECONDS uint64 = 600 // 10 分钟
 )

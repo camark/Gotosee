@@ -9,6 +9,7 @@ import (
 
 	"github.com/aaif-goose/gogo/internal/conversation"
 	"github.com/aaif-goose/gogo/internal/mcp"
+	"github.com/aaif-goose/gogo/internal/model"
 	"github.com/aaif-goose/gogo/internal/providers"
 	"github.com/aaif-goose/gogo/internal/session"
 )
@@ -26,6 +27,7 @@ type Agent struct {
 	toolResultTx         ToolResultReceiver
 	toolResultRx         *ToolResultReceiver
 	retryManager         *RetryManager
+	lifecycleManager     *LifecycleManager
 	container            *Container
 }
 
@@ -57,6 +59,7 @@ func NewAgentWithConfig(config *AgentConfig) *Agent {
 	toolRx := toolTx
 
 	retryManager := NewRetryManager()
+	lifecycleManager := NewLifecycleManager()
 
 	return &Agent{
 		provider:         NewSharedProvider(nil),
@@ -66,6 +69,7 @@ func NewAgentWithConfig(config *AgentConfig) *Agent {
 		toolResultTx:     toolTx,
 		toolResultRx:     &toolRx,
 		retryManager:     retryManager,
+		lifecycleManager: lifecycleManager,
 		container:        nil,
 	}
 }
@@ -99,6 +103,9 @@ func (a *Agent) Reply(ctx context.Context, messages []*conversation.Message) (<-
 	go func() {
 		defer close(eventChan)
 
+		// 重置重试计数器
+		a.retryManager.Reset()
+
 		// 获取提供商
 		provider := a.provider.Get()
 		if provider == nil {
@@ -113,8 +120,9 @@ func (a *Agent) Reply(ctx context.Context, messages []*conversation.Message) (<-
 			return
 		}
 
-		// 获取所有可用工具
-		tools := a.collectTools()
+		// 构建消息历史副本（避免修改原始数据）
+		msgHistory := make([]*conversation.Message, len(messages))
+		copy(msgHistory, messages)
 
 		// 主循环
 		maxTurns := DefaultMaxTurns
@@ -133,8 +141,11 @@ func (a *Agent) Reply(ctx context.Context, messages []*conversation.Message) (<-
 			default:
 			}
 
+			// 获取所有可用工具
+			tools := a.collectTools()
+
 			// 调用 LLM 生成回复
-			response, err := a.callLLM(ctx, provider, messages, tools)
+			response, err := a.callLLM(ctx, provider, msgHistory, tools)
 			if err != nil {
 				eventChan <- &MessageEvent{
 					Message: &conversation.Message{
@@ -147,7 +158,7 @@ func (a *Agent) Reply(ctx context.Context, messages []*conversation.Message) (<-
 				return
 			}
 
-			// 发送回复消息
+			// 发送文本回复消息
 			if response.Content != "" {
 				eventChan <- &MessageEvent{
 					Message: &conversation.Message{
@@ -162,17 +173,30 @@ func (a *Agent) Reply(ctx context.Context, messages []*conversation.Message) (<-
 			// 处理工具调用
 			if len(response.ToolCalls) > 0 {
 				for _, toolCall := range response.ToolCalls {
+					// 发送工具调用事件
 					eventChan <- &ToolCallEvent{
 						Name:      toolCall.Name,
 						Arguments: toolCall.Arguments,
 					}
 
+					// 执行工具
 					result, err := a.executeTool(ctx, toolCall)
 					if err != nil {
 						eventChan <- &ToolResultEvent{
 							Name:  toolCall.Name,
 							Error: err,
 						}
+						// 将错误添加到消息历史
+						msgHistory = append(msgHistory, &conversation.Message{
+							Role: conversation.RoleAssistant,
+							Content: []conversation.MessageContent{
+								{
+									Type:       conversation.MessageContentToolResult,
+									ToolName:   toolCall.Name,
+									ToolResult: fmt.Sprintf("执行错误：%v", err),
+								},
+							},
+						})
 					} else {
 						eventChan <- &ToolResultEvent{
 							Name:    toolCall.Name,
@@ -180,10 +204,14 @@ func (a *Agent) Reply(ctx context.Context, messages []*conversation.Message) (<-
 						}
 
 						// 将工具结果添加到消息历史
-						messages = append(messages, &conversation.Message{
+						msgHistory = append(msgHistory, &conversation.Message{
 							Role: conversation.RoleAssistant,
 							Content: []conversation.MessageContent{
-								{Type: conversation.MessageContentToolResult, ToolResult: result.Text()},
+								{
+									Type:       conversation.MessageContentToolResult,
+									ToolName:   toolCall.Name,
+									ToolResult: result.Text(),
+								},
 							},
 						})
 					}
@@ -194,6 +222,7 @@ func (a *Agent) Reply(ctx context.Context, messages []*conversation.Message) (<-
 			}
 		}
 
+		// 达到最大轮次
 		eventChan <- &MessageEvent{
 			Message: &conversation.Message{
 				Role: conversation.RoleAssistant,
@@ -221,14 +250,61 @@ type ToolCall struct {
 
 // callLLM 调用 LLM 生成回复。
 func (a *Agent) callLLM(ctx context.Context, provider providers.Provider, messages []*conversation.Message, tools []*mcp.Tool) (*LLMResponse, error) {
-	// TODO: 实现完整的 LLM 调用逻辑
-	// 这需要提供商实现 Chat 方法
+	// 转换为 providers 需要的消息格式
+	convMessages := make([]conversation.Message, len(messages))
+	for i, msg := range messages {
+		convMessages[i] = conversation.Message{
+			Role:       msg.Role,
+			Content:    msg.Content,
+			ToolCallID: msg.ToolCallID,
+		}
+	}
 
-	// 简化实现：返回空响应
-	return &LLMResponse{
-		Content:   "LLM 调用功能正在实现中...",
+	// 获取模型配置
+	config := model.ModelConfig{
+		Model:       "default",
+		Temperature: 0.7,
+		MaxTokens:   4096,
+	}
+
+	// 调用提供商的 Complete 方法
+	responseMsg, err := provider.Complete(ctx, convMessages, config)
+	if err != nil {
+		return nil, fmt.Errorf("provider complete failed: %w", err)
+	}
+
+	// 解析响应
+	return a.parseLLMResponse(responseMsg)
+}
+
+// parseLLMResponse 解析 LLM 响应消息。
+func (a *Agent) parseLLMResponse(msg conversation.Message) (*LLMResponse, error) {
+	response := &LLMResponse{
+		Content:   "",
 		ToolCalls: []ToolCall{},
-	}, nil
+	}
+
+	for _, content := range msg.Content {
+		switch content.Type {
+		case conversation.MessageContentText:
+			response.Content = content.Text
+
+		case conversation.MessageContentToolUse:
+			// 解析工具调用
+			var args map[string]interface{}
+			if content.ToolArgs != nil {
+				if err := json.Unmarshal(content.ToolArgs, &args); err != nil {
+					return nil, fmt.Errorf("parse tool args: %w", err)
+				}
+			}
+			response.ToolCalls = append(response.ToolCalls, ToolCall{
+				Name:      content.ToolName,
+				Arguments: args,
+			})
+		}
+	}
+
+	return response, nil
 }
 
 // collectTools 收集所有可用工具。
@@ -236,8 +312,27 @@ func (a *Agent) collectTools() []*mcp.Tool {
 	var tools []*mcp.Tool
 
 	// 从扩展管理器获取工具
-	for _, tool := range a.extensionManager.ListTools() {
-		tools = append(tools, tool)
+	extensionTools := a.extensionManager.ListTools()
+	tools = append(tools, extensionTools...)
+
+	// 从 MCP 服务器注册中心获取工具
+	serverNames := mcp.List()
+	for _, serverName := range serverNames {
+		server, err := mcp.Get(serverName)
+		if err != nil {
+			continue
+		}
+
+		serverTools, err := server.ListTools(context.Background())
+		if err != nil {
+			continue
+		}
+
+		// 转换 MCP Tool 为内部类型
+		for _, tool := range serverTools {
+			t := tool // 创建副本避免引用问题
+			tools = append(tools, &t)
+		}
 	}
 
 	return tools
@@ -245,12 +340,32 @@ func (a *Agent) collectTools() []*mcp.Tool {
 
 // executeTool 执行工具调用。
 func (a *Agent) executeTool(ctx context.Context, call ToolCall) (*ToolCallResult, error) {
-	// 调用工具
-	args, _ := json.Marshal(call.Arguments)
+	// 参数验证
+	if call.Name == "" {
+		return &ToolCallResult{
+			ToolName: call.Name,
+			Error:    fmt.Errorf("tool name is required"),
+		}, nil
+	}
+
+	// 序列化参数
+	var args json.RawMessage
+	if len(call.Arguments) > 0 {
+		var err error
+		args, err = json.Marshal(call.Arguments)
+		if err != nil {
+			return &ToolCallResult{
+				ToolName: call.Name,
+				Error:    fmt.Errorf("marshal arguments: %w", err),
+			}, nil
+		}
+	}
 
 	// 遍历所有注册的 MCP 服务器，找到包含该工具的服务器
 	serverNames := mcp.List()
 	var result *mcp.ToolResult
+	var callErr error
+
 	for _, serverName := range serverNames {
 		server, err := mcp.Get(serverName)
 		if err != nil {
@@ -258,8 +373,8 @@ func (a *Agent) executeTool(ctx context.Context, call ToolCall) (*ToolCallResult
 		}
 
 		// 尝试调用工具
-		result, err = server.CallTool(ctx, call.Name, args)
-		if err == nil {
+		result, callErr = server.CallTool(ctx, call.Name, args)
+		if callErr == nil {
 			break
 		}
 	}
@@ -267,16 +382,18 @@ func (a *Agent) executeTool(ctx context.Context, call ToolCall) (*ToolCallResult
 	if result == nil {
 		return &ToolCallResult{
 			ToolName: call.Name,
-			Error:    fmt.Errorf("tool not found in any server: %s", call.Name),
+			Error:    fmt.Errorf("tool not found: %s (last error: %v)", call.Name, callErr),
 		}, nil
 	}
 
-	// 转换结果
+	// 转换 MCP 结果为 ToolCallResult
 	content := make([]*mcp.Content, 0, len(result.Content))
 	for _, c := range result.Content {
 		content = append(content, &mcp.Content{
-			Type: c.Type,
-			Text: c.Text,
+			Type:     c.Type,
+			Text:     c.Text,
+			Data:     c.Data,
+			MIMEType: c.MIMEType,
 		})
 	}
 
