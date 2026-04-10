@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/aaif-goose/gogo/internal/providers"
-	"github.com/aaif-goose/gogo/internal/recipe"
+	"github.com/camark/Gotosee/internal/providers"
+	"github.com/camark/Gotosee/internal/recipe"
 	"github.com/spf13/cobra"
 )
 

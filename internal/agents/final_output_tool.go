@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/aaif-goose/gogo/internal/conversation"
-	"github.com/aaif-goose/gogo/internal/mcp"
+	"github.com/camark/Gotosee/internal/conversation"
+	"github.com/camark/Gotosee/internal/mcp"
 )
 
 // FinalOutputTool 最终输出工具。

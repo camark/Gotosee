@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"sync"
 
-	"github.com/aaif-goose/gogo/internal/session"
+	"github.com/camark/Gotosee/internal/session"
 )
 
 // ExtensionState 扩展状态。

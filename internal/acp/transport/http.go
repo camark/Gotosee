@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/aaif-goose/gogo/internal/acp"
+	"github.com/camark/Gotosee/internal/acp"
 )
 
 // ============================================================================

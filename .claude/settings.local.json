@@ -36,7 +36,10 @@
       "Bash(wslcmd -c \"/mnt/c/git/gogo/goose.exe --help\")",
       "Bash(./goose.exe version:*)",
       "Bash(./goose.exe chat:*)",
-      "Bash(kill %1)"
+      "Bash(kill %1)",
+      "WebFetch(domain:github.com)",
+      "Bash(curl:*)",
+      "Bash(xargs sed:*)"
     ]
   }
 }

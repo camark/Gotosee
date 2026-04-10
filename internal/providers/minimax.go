@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aaif-goose/gogo/internal/conversation"
-	"github.com/aaif-goose/gogo/internal/model"
+	"github.com/camark/Gotosee/internal/conversation"
+	"github.com/camark/Gotosee/internal/model"
 )
 
 // MiniMaxProvider MiniMax 提供商实现（名之梦）。

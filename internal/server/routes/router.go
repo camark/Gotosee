@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/aaif-goose/gogo/internal/server/state"
-	"github.com/aaif-goose/gogo/internal/session"
+	"github.com/camark/Gotosee/internal/server/state"
+	"github.com/camark/Gotosee/internal/session"
 )
 
 // Router HTTP 路由器。

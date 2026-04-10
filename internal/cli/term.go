@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aaif-goose/gogo/internal/conversation"
-	"github.com/aaif-goose/gogo/internal/providers"
+	"github.com/camark/Gotosee/internal/conversation"
+	"github.com/camark/Gotosee/internal/providers"
 	"github.com/spf13/cobra"
 )
 

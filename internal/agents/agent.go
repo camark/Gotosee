@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/aaif-goose/gogo/internal/conversation"
-	"github.com/aaif-goose/gogo/internal/mcp"
-	"github.com/aaif-goose/gogo/internal/permission"
-	"github.com/aaif-goose/gogo/internal/providers"
-	"github.com/aaif-goose/gogo/internal/session"
+	"github.com/camark/Gotosee/internal/conversation"
+	"github.com/camark/Gotosee/internal/mcp"
+	"github.com/camark/Gotosee/internal/permission"
+	"github.com/camark/Gotosee/internal/providers"
+	"github.com/camark/Gotosee/internal/session"
 )
 
 // Agent 主要的 goose 代理。

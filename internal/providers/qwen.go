@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aaif-goose/gogo/internal/conversation"
-	"github.com/aaif-goose/gogo/internal/model"
+	"github.com/camark/Gotosee/internal/conversation"
+	"github.com/camark/Gotosee/internal/model"
 )
 
 // QwenProvider Qwen 提供商实现（通义千问 - 阿里云）。

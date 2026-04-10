@@ -6,11 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/aaif-goose/gogo/internal/conversation"
-	"github.com/aaif-goose/gogo/internal/model"
-	"github.com/aaif-goose/gogo/internal/permission"
-	"github.com/aaif-goose/gogo/internal/providers"
-	"github.com/aaif-goose/gogo/internal/session"
+	"github.com/camark/Gotosee/internal/conversation"
+	"github.com/camark/Gotosee/internal/model"
+	"github.com/camark/Gotosee/internal/permission"
+	"github.com/camark/Gotosee/internal/providers"
+	"github.com/camark/Gotosee/internal/session"
 )
 
 // MockProvider 模拟提供商用于测试。

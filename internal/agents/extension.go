@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/aaif-goose/gogo/internal/mcp"
-	"github.com/aaif-goose/gogo/internal/session"
+	"github.com/camark/Gotosee/internal/mcp"
+	"github.com/camark/Gotosee/internal/session"
 )
 
 // ExtensionConfig 扩展配置。

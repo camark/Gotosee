@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/aaif-goose/gogo/internal/cli"
+	"github.com/camark/Gotosee/internal/cli"
 )
 
 func main() {

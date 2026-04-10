@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/aaif-goose/gogo/internal/model"
+	"github.com/camark/Gotosee/internal/model"
 )
 
 // Registry 提供商注册表。

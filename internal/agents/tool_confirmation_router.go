@@ -4,7 +4,7 @@ package agents
 import (
 	"sync"
 
-	"github.com/aaif-goose/gogo/internal/permission"
+	"github.com/camark/Gotosee/internal/permission"
 )
 
 // PermissionConfirmation 权限确认。

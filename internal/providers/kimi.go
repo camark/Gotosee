@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aaif-goose/gogo/internal/conversation"
-	"github.com/aaif-goose/gogo/internal/model"
+	"github.com/camark/Gotosee/internal/conversation"
+	"github.com/camark/Gotosee/internal/model"
 )
 
 // KimiProvider Kimi 提供商实现（月之暗面）。

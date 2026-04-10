@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/aaif-goose/gogo/internal/conversation"
+	"github.com/camark/Gotosee/internal/conversation"
 )
 
 func TestFinalOutputTool_Execute(t *testing.T) {

@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/aaif-goose/gogo/internal/conversation"
-	"github.com/aaif-goose/gogo/internal/mcp"
-	"github.com/aaif-goose/gogo/internal/model"
-	"github.com/aaif-goose/gogo/internal/providers"
+	"github.com/camark/Gotosee/internal/conversation"
+	"github.com/camark/Gotosee/internal/mcp"
+	"github.com/camark/Gotosee/internal/model"
+	"github.com/camark/Gotosee/internal/providers"
 )
 
 // ReplyContext 回复上下文。

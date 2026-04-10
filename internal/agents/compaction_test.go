@@ -3,7 +3,7 @@ package agents
 import (
 	"testing"
 
-	"github.com/aaif-goose/gogo/internal/conversation"
+	"github.com/camark/Gotosee/internal/conversation"
 )
 
 func TestNeedsCompaction(t *testing.T) {

@@ -103,7 +103,7 @@ var tutorials = map[string]tutorialContent{
 		Level:       "beginner",
 		Description: "学习如何使用 Goose AI 代理框架的基础知识",
 		Steps: []string{
-			"1. 安装 Goose：go install github.com/aaif-goose/gogo/cmd/goose@latest",
+			"1. 安装 Goose：go install github.com/camark/Gotosee/cmd/goose@latest",
 			"2. 运行配置向导：goose configure",
 			"3. 选择 AI 提供商（OpenAI、Anthropic、Ollama 等）",
 			"4. 输入 API Key（Ollama 不需要）",

@@ -5,9 +5,9 @@ import (
 	"context"
 	"sync"
 
-	"github.com/aaif-goose/gogo/internal/acp"
-	"github.com/aaif-goose/gogo/internal/mcp"
-	"github.com/aaif-goose/gogo/internal/session"
+	"github.com/camark/Gotosee/internal/acp"
+	"github.com/camark/Gotosee/internal/mcp"
+	"github.com/camark/Gotosee/internal/session"
 )
 
 // AppState 应用状态。

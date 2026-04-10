@@ -11,10 +11,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/aaif-goose/gogo/internal/acp"
-	"github.com/aaif-goose/gogo/internal/server"
-	"github.com/aaif-goose/gogo/internal/server/routes"
-	"github.com/aaif-goose/gogo/internal/server/state"
+	"github.com/camark/Gotosee/internal/acp"
+	"github.com/camark/Gotosee/internal/server"
+	"github.com/camark/Gotosee/internal/server/routes"
+	"github.com/camark/Gotosee/internal/server/state"
 )
 
 func main() {

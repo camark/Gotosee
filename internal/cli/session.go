@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/aaif-goose/gogo/internal/session"
+	"github.com/camark/Gotosee/internal/session"
 	"github.com/spf13/cobra"
 )
 

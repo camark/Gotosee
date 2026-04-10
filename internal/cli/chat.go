@@ -10,11 +10,11 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/aaif-goose/gogo/internal/agents"
-	"github.com/aaif-goose/gogo/internal/conversation"
-	"github.com/aaif-goose/gogo/internal/model"
-	"github.com/aaif-goose/gogo/internal/providers"
-	"github.com/aaif-goose/gogo/internal/session"
+	"github.com/camark/Gotosee/internal/agents"
+	"github.com/camark/Gotosee/internal/conversation"
+	"github.com/camark/Gotosee/internal/model"
+	"github.com/camark/Gotosee/internal/providers"
+	"github.com/camark/Gotosee/internal/session"
 	"github.com/spf13/cobra"
 )
 

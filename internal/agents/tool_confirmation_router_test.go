@@ -3,7 +3,7 @@ package agents
 import (
 	"testing"
 
-	"github.com/aaif-goose/gogo/internal/permission"
+	"github.com/camark/Gotosee/internal/permission"
 )
 
 func TestToolConfirmationRouter_RegisterAndDeliver(t *testing.T) {

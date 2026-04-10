@@ -4,8 +4,8 @@ package providers
 import (
 	"context"
 
-	"github.com/aaif-goose/gogo/internal/conversation"
-	"github.com/aaif-goose/gogo/internal/model"
+	"github.com/camark/Gotosee/internal/conversation"
+	"github.com/camark/Gotosee/internal/model"
 )
 
 // Provider AI 提供商接口。

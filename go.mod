@@ -1,4 +1,4 @@
-module github.com/aaif-goose/gogo
+module github.com/camark/Gotosee
 
 go 1.25.0
 

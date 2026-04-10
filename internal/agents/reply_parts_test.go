@@ -5,9 +5,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/aaif-goose/gogo/internal/conversation"
-	"github.com/aaif-goose/gogo/internal/model"
-	"github.com/aaif-goose/gogo/internal/providers"
+	"github.com/camark/Gotosee/internal/conversation"
+	"github.com/camark/Gotosee/internal/model"
+	"github.com/camark/Gotosee/internal/providers"
 )
 
 var (

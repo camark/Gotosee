@@ -4,7 +4,7 @@ package agents
 import (
 	"fmt"
 
-	"github.com/aaif-goose/gogo/internal/conversation"
+	"github.com/camark/Gotosee/internal/conversation"
 )
 
 // needsCompaction 检查是否需要压缩消息。

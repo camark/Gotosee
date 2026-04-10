@@ -148,7 +148,7 @@ func (s *FetchServer) fetchURL(params json.RawMessage) (*ToolResult, error) {
 			Content: []Content{{Type: "text", Text: fmt.Sprintf("请求失败：%v", err)}},
 		}, nil
 	}
-	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; Goose/1.0; +https://github.com/aaif-goose/gogo)")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; Goose/1.0; +https://github.com/camark/Gotosee)")
 
 	resp, err := s.client.Do(req)
 	if err != nil {
@@ -250,7 +250,7 @@ func (s *FetchServer) fetchSummary(params json.RawMessage) (*ToolResult, error) 
 			Content: []Content{{Type: "text", Text: fmt.Sprintf("请求失败：%v", err)}},
 		}, nil
 	}
-	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; Goose/1.0; +https://github.com/aaif-goose/gogo)")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; Goose/1.0; +https://github.com/camark/Gotosee)")
 
 	resp, err := s.client.Do(req)
 	if err != nil {
@@ -381,7 +381,7 @@ func (s *FetchServer) fetchLinks(params json.RawMessage) (*ToolResult, error) {
 			Content: []Content{{Type: "text", Text: fmt.Sprintf("请求失败：%v", err)}},
 		}, nil
 	}
-	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; Goose/1.0; +https://github.com/aaif-goose/gogo)")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; Goose/1.0; +https://github.com/camark/Gotosee)")
 
 	resp, err := s.client.Do(req)
 	if err != nil {
@@ -503,7 +503,7 @@ func (s *FetchServer) fetchMetadata(params json.RawMessage) (*ToolResult, error)
 			Content: []Content{{Type: "text", Text: fmt.Sprintf("请求失败：%v", err)}},
 		}, nil
 	}
-	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; Goose/1.0; +https://github.com/aaif-goose/gogo)")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; Goose/1.0; +https://github.com/camark/Gotosee)")
 
 	resp, err := s.client.Do(req)
 	if err != nil {
