@@ -75,24 +75,17 @@ func NewAgentWithConfig(config *AgentConfig) *Agent {
 
 // ResetRetryAttempts 重置重试计数。
 func (a *Agent) ResetRetryAttempts() {
-	a.retryManager.mu.Lock()
-	defer a.retryManager.mu.Unlock()
-	a.retryManager.retryAttempts = 0
+	a.retryManager.Reset()
 }
 
 // IncrementRetryAttempts 增加重试计数并返回新值。
 func (a *Agent) IncrementRetryAttempts() uint32 {
-	a.retryManager.mu.Lock()
-	defer a.retryManager.mu.Unlock()
-	a.retryManager.retryAttempts++
-	return a.retryManager.retryAttempts
+	return a.retryManager.Increment()
 }
 
 // GetRetryAttempts 获取当前重试计数。
 func (a *Agent) GetRetryAttempts() uint32 {
-	a.retryManager.mu.Lock()
-	defer a.retryManager.mu.Unlock()
-	return a.retryManager.retryAttempts
+	return a.retryManager.Get()
 }
 
 // Reply 处理用户消息并生成回复（核心方法）。
