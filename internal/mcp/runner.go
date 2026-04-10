@@ -241,18 +241,13 @@ func ParseMcpCommand(s string) (McpCommand, error) {
 
 // NewServerForCommand 为命令创建服务器。
 func NewServerForCommand(cmd McpCommand) Server {
-	switch cmd {
-	case McpCommandAutoVisualiser:
-		return &SimpleServer{name: "auto-visualiser", version: "1.0.0"}
-	case McpCommandComputerController:
-		return NewComputerControllerServer()
-	case McpCommandMemory:
-		return &SimpleServer{name: "memory", version: "1.0.0"}
-	case McpCommandTutorial:
-		return &SimpleServer{name: "tutorial", version: "1.0.0"}
-	default:
-		return &SimpleServer{name: "unknown", version: "1.0.0"}
+	// 使用注册中心获取服务器
+	server, err := Get(string(cmd))
+	if err != nil {
+		// 回退到简单服务器
+		return &SimpleServer{name: cmd.String(), version: "1.0.0"}
 	}
+	return server
 }
 
 // SimpleServer 简单的服务器实现。
