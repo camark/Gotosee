@@ -115,4 +115,9 @@ func init() {
 	Register("fetch", func() Server {
 		return NewFetchServer()
 	})
+
+	// 注册 Git 服务器
+	Register("git", func() Server {
+		return NewGitServer()
+	})
 }
