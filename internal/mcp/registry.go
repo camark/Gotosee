@@ -130,4 +130,9 @@ func init() {
 	Register("time", func() Server {
 		return NewTimeServer()
 	})
+
+	// 注册环境变量服务器
+	Register("environment", func() Server {
+		return NewEnvironmentServer()
+	})
 }
