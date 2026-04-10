@@ -82,17 +82,22 @@ gogo/
   - [x] 重试管理器 (`internal/agents/retry.go`)
   - [x] 扩展管理器 (`internal/agents/extension.go`)
   - [x] 生命周期管理器 (`internal/agents/lifecycle.go`) ✅ 新增
-  - [x] 完整 Agent 循环实现 ✅ 新增
+  - [x] 完整 Agent 循环实现 ✅ 完成
     - [x] callLLM 方法支持 LLM 调用
     - [x] executeTool 方法支持工具调用
     - [x] collectTools 从 MCP 服务器收集工具
     - [x] Reply 主循环支持多轮对话
+    - [x] 流式响应支持 (`internal/agents/reply_parts.go`) ✅ 新增
   - [x] 工具确认路由器 (`internal/agents/tool_confirmation_router.go`) ✅ 新增
   - [x] 权限管理器 (`internal/permission/permission.go`) ✅ 新增
   - [x] Reply 辅助功能 (`internal/agents/reply_parts.go`) ✅ 新增
     - [x] ReplyContext 回复上下文
     - [x] ToolCategorizeResult 工具分类
     - [x] buildSystemPrompt 系统提示构建
+  - [x] 消息压缩 (`internal/agents/compaction.go`) ✅ 新增
+  - [x] 最终输出工具 (`internal/agents/final_output_tool.go`) ✅ 新增
+  - [x] 扩展状态持久化 (`internal/agents/extension_state.go`) ✅ 新增
+  - [x] 集成测试 (`internal/agents/agent_integration_test.go`) ✅ 新增
 - [x] **goose-cli** - 命令行接口 (2026-04-10) ✅ 完成
   - [x] CLI 框架 (`internal/cli/cli.go`)
   - [x] configure 命令 (配置向导)
@@ -171,20 +176,22 @@ go test ./...
 
 ## 下一步
 
-1. **goose-agents** - 完善代理循环（LLM 调用、工具执行）
-2. **更多 Provider** - Bedrock, Vertex AI, Snowflake 等
+1. **更多 AI 提供商** - Bedrock, Vertex AI, Snowflake 等
+2. **goose-agents 增强** - 调度服务集成、前端工具支持
 
 ## 统计
 
 | 指标 | 数量 |
 |------|------|
-| Go 文件 | 90+ |
-| 代码行数 | ~28000+ |
-| 包 | 23 |
+| Go 文件 | 95+ |
+| 代码行数 | ~30000+ |
+| 包 | 24 |
 | CLI 命令 | 11 |
 | MCP 服务器 | 14 |
 | 提供商实现 | 10 |
 | 权限级别 | 4 (AllowOnce, AlwaysAllow, DenyOnce, AlwaysDeny) |
+| 测试 | 50+ |
+| 基准测试 | 2 (Reply: 75K ops/s, Compaction: 979K ops/s) |
 
 ## 依赖
 
