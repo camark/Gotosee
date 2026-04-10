@@ -48,6 +48,10 @@ gogo/
   - [x] 计算机控制服务器
   - [x] 文档处理工具 (PDF/DOCX/XLSX)
   - [x] MCP 服务器运行器
+  - [x] MCP 服务器注册中心 ✅ 新增
+  - [x] Memory 服务器（记忆管理） ✅ 新增
+  - [x] Tutorial 服务器（教程指南） ✅ 新增
+  - [x] Fetch 服务器（网页抓取） ✅ 新增
 - [x] **goose-acp** - ACP 协议
   - [x] ACP 类型定义
   - [x] ACP 服务器
@@ -82,7 +86,7 @@ gogo/
 
 ### 待迁移
 - [ ] 更多 AI 提供商 (Bedrock, Vertex AI, Snowflake 等)
-- [ ] MCP 服务器增强 (Memory, Tutorial, AutoVisualiser 等)
+- [ ] MCP 服务器增强 (AutoVisualiser 等)
 - [ ] 会话导出/导入功能
 - [ ] 完整的 Agent 循环（工具调度、消息处理）
 
@@ -142,10 +146,11 @@ go test ./...
 
 | 指标 | 数量 |
 |------|------|
-| Go 文件 | 40+ |
-| 代码行数 | ~9000+ |
-| 包 | 18 |
+| Go 文件 | 50+ |
+| 代码行数 | ~11000+ |
+| 包 | 20 |
 | CLI 命令 | 10 |
+| MCP 服务器 | 6 |
 
 ## 依赖
 
