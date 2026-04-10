@@ -145,6 +145,9 @@ func (a *Agent) Reply(ctx context.Context, messages []*conversation.Message) (<-
 			// 获取所有可用工具
 			tools := a.collectTools()
 
+			// 检查并压缩消息以节省上下文
+			workingHistory = a.checkAndCompact(workingHistory)
+
 			// 调用 LLM 生成回复
 			response, err := a.callLLM(ctx, provider, workingHistory, tools)
 			if err != nil {
