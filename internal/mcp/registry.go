@@ -110,4 +110,9 @@ func init() {
 	Register("tutorial", func() Server {
 		return NewTutorialServer()
 	})
+
+	// 注册抓取服务器
+	Register("fetch", func() Server {
+		return NewFetchServer()
+	})
 }

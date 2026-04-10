@@ -211,10 +211,11 @@ func (r *MCPServerRunner) handleResourcesRead(ctx context.Context, params json.R
 type McpCommand string
 
 const (
-	McpCommandAutoVisualiser    McpCommand = "autovisualiser"
+	McpCommandAutoVisualiser     McpCommand = "autovisualiser"
 	McpCommandComputerController McpCommand = "computercontroller"
-	McpCommandMemory            McpCommand = "memory"
-	McpCommandTutorial          McpCommand = "tutorial"
+	McpCommandMemory             McpCommand = "memory"
+	McpCommandTutorial           McpCommand = "tutorial"
+	McpCommandFetch              McpCommand = "fetch"
 )
 
 // String 返回命令字符串。
@@ -234,6 +235,8 @@ func ParseMcpCommand(s string) (McpCommand, error) {
 		return McpCommandMemory, nil
 	case "tutorial":
 		return McpCommandTutorial, nil
+	case "fetch":
+		return McpCommandFetch, nil
 	default:
 		return "", fmt.Errorf("unknown MCP command: %s", s)
 	}
