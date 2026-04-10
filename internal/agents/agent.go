@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/camark/Gotosee/internal/conversation"
@@ -57,12 +58,16 @@ func NewAgentWithConfig(config *AgentConfig) *Agent {
 	lifecycleManager := NewLifecycleManager()
 	toolConfirmationRouter := NewToolConfirmationRouter()
 	permissionManager := permission.NewPermissionManager()
+	finalOutputTool := NewFinalOutputTool(&Response{
+		Name:        "final_output",
+		Description: "Final output tool for the agent",
+	})
 
 	return &Agent{
 		provider:               NewSharedProvider(nil),
 		config:                 config,
 		extensionManager:       NewExtensionManager(),
-		finalOutputTool:        nil,
+		finalOutputTool:        finalOutputTool,
 		toolResultTx:           toolChan,
 		toolResultRx:           &toolChan,
 		retryManager:           retryManager,
@@ -222,10 +227,16 @@ func (a *Agent) Reply(ctx context.Context, messages []*conversation.Message) (<-
 				})
 
 				// 然后：依次执行每个工具，添加对应的 Tool 消息
+				finalOutputCalled := false
 				for _, toolCall := range response.ToolCalls {
 					toolCallID := toolCall.ID
 					if toolCallID == "" {
 						toolCallID = fmt.Sprintf("call_%s_%d", toolCall.Name, turn)
+					}
+
+					// 检查是否是 FinalOutputTool
+					if toolCall.Name == FINAL_OUTPUT_TOOL_NAME {
+						finalOutputCalled = true
 					}
 
 					// 发送工具调用事件
@@ -277,6 +288,11 @@ func (a *Agent) Reply(ctx context.Context, messages []*conversation.Message) (<-
 						})
 					}
 				}
+
+				// 如果调用了 FinalOutputTool，结束循环
+				if finalOutputCalled {
+					return
+				}
 			} else {
 				// 没有工具调用，完成
 				return
@@ -322,7 +338,7 @@ func (a *Agent) callLLM(ctx context.Context, provider providers.Provider, messag
 			Content: []conversation.MessageContent{
 				{
 					Type: conversation.MessageContentText,
-					Text: "You are an AI assistant with access to tools. WHEN THE USER ASKS ABOUT FILES, DIRECTORIES, SYSTEM INFORMATION, OR ANY DATA THAT REQUIRES TOOL ACCESS, YOU MUST CALL THE APPROPRIATE TOOL. DO NOT describe what you would do - ACTUALLY CALL THE TOOL. Use the same language as the user's message for your response.",
+					Text: buildSystemPromptWithFinalOutput(a),
 				},
 			},
 		})
@@ -431,9 +447,28 @@ func fixInvalidJSONEscapes(s string) string {
 	return string(result)
 }
 
+// buildSystemPromptWithFinalOutput 构建包含 FinalOutputTool 的系统提示词。
+func buildSystemPromptWithFinalOutput(a *Agent) string {
+	var sb strings.Builder
+	sb.WriteString("You are an AI assistant with access to tools. WHEN THE USER ASKS ABOUT FILES, DIRECTORIES, SYSTEM INFORMATION, OR ANY DATA THAT REQUIRES TOOL ACCESS, YOU MUST CALL THE APPROPRIATE TOOL. DO NOT describe what you would do - ACTUALLY CALL THE TOOL. Use the same language as the user's message for your response.\n\n")
+
+	// 添加 FinalOutputTool 的系统提示词（如果可用）
+	if a.finalOutputTool != nil {
+		sb.WriteString(a.finalOutputTool.SystemPrompt())
+		sb.WriteString("\n\n")
+	}
+
+	return sb.String()
+}
+
 // collectTools 收集所有可用工具。
 func (a *Agent) collectTools() []*mcp.Tool {
 	var tools []*mcp.Tool
+
+	// 添加 FinalOutputTool（如果已初始化）
+	if a.finalOutputTool != nil {
+		tools = append(tools, a.finalOutputTool.ToolDefinition())
+	}
 
 	// 从扩展管理器获取工具
 	extensionTools := a.extensionManager.ListTools()
@@ -469,6 +504,11 @@ func (a *Agent) CollectTools() []*mcp.Tool {
 
 // executeTool 执行工具调用。
 func (a *Agent) executeTool(ctx context.Context, call ToolCall) (*ToolCallResult, error) {
+	// 检查是否是 FinalOutputTool
+	if a.finalOutputTool != nil && call.Name == FINAL_OUTPUT_TOOL_NAME {
+		return a.finalOutputTool.Execute(call.Arguments)
+	}
+
 	// 参数验证
 	if call.Name == "" {
 		return &ToolCallResult{
