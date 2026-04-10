@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/camark/Gotosee/internal/mcp"
 	"github.com/camark/Gotosee/internal/server/state"
 	"github.com/camark/Gotosee/internal/session"
 )
@@ -298,9 +299,30 @@ func (r *Router) deleteSession(w http.ResponseWriter, req *http.Request) {
 
 // listTools 列出工具。
 func (r *Router) listTools(w http.ResponseWriter, req *http.Request) {
-	// TODO: 实现工具列表
+	var tools []*mcp.Tool
+	serverNames := mcp.List()
+
+	for _, serverName := range serverNames {
+		server, err := mcp.Get(serverName)
+		if err != nil {
+			continue
+		}
+
+		serverTools, err := server.ListTools(context.Background())
+		if err != nil {
+			continue
+		}
+
+		for _, tool := range serverTools {
+			t := tool
+			tools = append(tools, &t)
+		}
+	}
+
 	response := map[string]interface{}{
-		"tools": []interface{}{},
+		"tools":  tools,
+		"count":  len(tools),
+		"servers": serverNames,
 	}
 	writeJSON(w, http.StatusOK, response)
 }
