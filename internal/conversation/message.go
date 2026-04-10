@@ -10,10 +10,11 @@ import (
 type MessageContentType string
 
 const (
-	MessageContentText      MessageContentType = "text"
-	MessageContentImage     MessageContentType = "image"
-	MessageContentToolUse   MessageContentType = "tool_use"
+	MessageContentText       MessageContentType = "text"
+	MessageContentImage      MessageContentType = "image"
+	MessageContentToolUse    MessageContentType = "tool_use"
 	MessageContentToolResult MessageContentType = "tool_result"
+	MessageContentActionRequired MessageContentType = "action_required"
 )
 
 // MessageContent 单条消息内容。
@@ -25,6 +26,15 @@ type MessageContent struct {
 	ToolName   string             `json:"tool_name,omitempty"`
 	ToolArgs   json.RawMessage    `json:"tool_args,omitempty"`
 	ToolResult string             `json:"tool_result,omitempty"`
+	// ActionRequired 用于需要用户确认的操作
+	ActionRequired *ActionRequiredData `json:"action_required,omitempty"`
+}
+
+// ActionRequiredData 行动请求数据。
+type ActionRequiredData struct {
+	Type      string                 `json:"type"`
+	ToolName  string                 `json:"tool_name"`
+	Arguments map[string]interface{} `json:"arguments"`
 }
 
 // MessageRole 消息角色。

@@ -103,6 +103,21 @@ gogo/
 ### 待迁移
 - [ ] 更多 AI 提供商 (Bedrock, Vertex AI, Snowflake 等)
 
+## 支持的 AI 提供商
+
+| 提供商 | 模型 | 上下文窗口 | 状态 |
+|--------|------|------------|------|
+| **OpenAI** | gpt-4o, gpt-4o-mini, o1 | 128K | ✅ |
+| **Anthropic** | claude-3-5-sonnet, claude-3-opus | 200K | ✅ |
+| **Google** | gemini-pro, gemini-ultra | 128K | ✅ |
+| **Ollama** | 本地模型 | 可变 | ✅ |
+| **Azure** | Azure OpenAI | 128K | ✅ |
+| **OpenRouter** | 多模型聚合 | 可变 | ✅ |
+| **DeepSeek** | deepseek-chat, deepseek-coder | 128K | ✅ |
+| **Kimi** | moonshot-v1-8k/32k/128k | 128K | ✅ **新增** |
+| **MiniMax** | abab6.5s-chat | 256K | ✅ **新增** |
+| **Qwen** | qwen-turbo/plus/max | 128K | ✅ **新增** |
+
 ## 构建
 
 ```bash
@@ -150,21 +165,19 @@ go test ./...
 
 ## 下一步
 
-1. **goose-session** - 会话持久化（SQLite 存储）
-2. **goose-agents** - 代理逻辑（工具调度、消息处理）
-3. **goose-cli** - 完整 CLI（configure、session、recipe 等命令）
-4. **更多 Provider** - Anthropic、Google、Ollama、Azure 等
+1. **goose-agents** - 完善代理循环（LLM 调用、工具执行）
+2. **更多 Provider** - Bedrock, Vertex AI, Snowflake 等
 
 ## 统计
 
 | 指标 | 数量 |
 |------|------|
-| Go 文件 | 80+ |
-| 代码行数 | ~23000+ |
+| Go 文件 | 85+ |
+| 代码行数 | ~26000+ |
 | 包 | 21 |
 | CLI 命令 | 11 |
 | MCP 服务器 | 14 |
-| 提供商实现 | 6 |
+| 提供商实现 | 10 |
 
 ## 依赖
 

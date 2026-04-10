@@ -431,3 +431,91 @@ func (a *Agent) GetGooseMode() string {
 	defer a.currentGooseMode.RUnlock()
 	return a.config.GooseMode
 }
+
+// handleApprovalToolRequests 处理需要审批的工具请求。
+func (a *Agent) handleApprovalToolRequests(
+	toolRequests []*ToolRequest,
+	toolFutures *map[string]*ToolCallResult,
+	requestToResponseMap map[string]*conversation.Message,
+	sessionID string,
+) error {
+	for _, request := range toolRequests {
+		// 检查权限管理器
+		if a.permissionManager.ShouldAutoApprove(request.ToolCall.Name) {
+			// 自动批准
+			result, err := a.executeTool(context.Background(), request.ToolCall)
+			(*toolFutures)[request.ID] = result
+			if err != nil {
+				return err
+			}
+			continue
+		}
+
+		if a.permissionManager.ShouldAutoDeny(request.ToolCall.Name) {
+			// 自动拒绝
+			if response, ok := requestToResponseMap[request.ID]; ok {
+				response.Content = append(response.Content, conversation.MessageContent{
+					Type:       conversation.MessageContentToolResult,
+					ToolName:   request.ToolCall.Name,
+					ToolResult: "用户已拒绝运行此工具",
+				})
+			}
+			continue
+		}
+
+		// 需要用户确认
+		// 发送行动请求事件
+		eventChan := make(chan AgentEvent, 1)
+		eventChan <- &MessageEvent{
+			Message: &conversation.Message{
+				Role: conversation.RoleUser,
+				Content: []conversation.MessageContent{
+					{
+						Type: conversation.MessageContentActionRequired,
+						ActionRequired: &conversation.ActionRequiredData{
+							Type:      "elicitation",
+							ToolName:  request.ToolCall.Name,
+							Arguments: request.ToolCall.Arguments,
+						},
+					},
+				},
+			},
+		}
+
+		// 注册确认通道
+		confirmationCh := a.toolConfirmationRouter.Register(request.ID)
+
+		// 等待确认
+		confirmation := <-confirmationCh
+
+		if confirmation.Permission == permission.AllowOnce || confirmation.Permission == permission.AlwaysAllow {
+			// 执行工具
+			result, err := a.executeTool(context.Background(), request.ToolCall)
+			(*toolFutures)[request.ID] = result
+			if err != nil {
+				return err
+			}
+
+			// 如果总是允许，更新权限管理器
+			if confirmation.Permission == permission.AlwaysAllow {
+				a.permissionManager.SetPermission(request.ToolCall.Name, permission.PermissionLevelAlwaysAllow)
+			}
+		} else {
+			// 拒绝
+			if response, ok := requestToResponseMap[request.ID]; ok {
+				response.Content = append(response.Content, conversation.MessageContent{
+					Type:       conversation.MessageContentToolResult,
+					ToolName:   request.ToolCall.Name,
+					ToolResult: "用户已拒绝运行此工具",
+				})
+			}
+
+			// 如果总是拒绝，更新权限管理器
+			if confirmation.Permission == permission.AlwaysDeny {
+				a.permissionManager.SetPermission(request.ToolCall.Name, permission.PermissionLevelNeverAllow)
+			}
+		}
+	}
+
+	return nil
+}
