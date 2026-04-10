@@ -28,6 +28,9 @@ type Provider interface {
 
 	// ListModels 列出支持的模型。
 	ListModels(ctx context.Context) ([]ModelInfo, error)
+
+	// GetModelConfig 获取当前模型配置。
+	GetModelConfig() model.ModelConfig
 }
 
 // StreamChunk 流式响应块。
@@ -95,6 +98,11 @@ func (b *BaseProvider) Description() string {
 
 // Config 返回模型配置。
 func (b *BaseProvider) Config() model.ModelConfig {
+	return b.config
+}
+
+// GetModelConfig 获取当前模型配置。
+func (b *BaseProvider) GetModelConfig() model.ModelConfig {
 	return b.config
 }
 

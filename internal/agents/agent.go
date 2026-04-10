@@ -9,7 +9,6 @@ import (
 
 	"github.com/aaif-goose/gogo/internal/conversation"
 	"github.com/aaif-goose/gogo/internal/mcp"
-	"github.com/aaif-goose/gogo/internal/model"
 	"github.com/aaif-goose/gogo/internal/permission"
 	"github.com/aaif-goose/gogo/internal/providers"
 	"github.com/aaif-goose/gogo/internal/session"
@@ -252,11 +251,16 @@ func (a *Agent) callLLM(ctx context.Context, provider providers.Provider, messag
 		}
 	}
 
-	// 获取模型配置
-	config := model.ModelConfig{
-		Model:       "default",
-		Temperature: 0.7,
-		MaxTokens:   4096,
+	// 从 provider 获取模型配置
+	config := provider.GetModelConfig()
+	if config.Model == "" {
+		config.Model = "gpt-4o" // 默认模型
+	}
+	if config.Temperature == 0 {
+		config.Temperature = 0.7
+	}
+	if config.MaxTokens == 0 {
+		config.MaxTokens = 4096
 	}
 
 	// 调用提供商的 Complete 方法

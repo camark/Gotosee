@@ -126,6 +126,14 @@ func (p *GoogleProvider) Name() string {
 	return GoogleProviderName
 }
 
+// GetModelConfig 获取当前模型配置。
+func (p *GoogleProvider) GetModelConfig() model.ModelConfig {
+	if p.model != nil {
+		return *p.model
+	}
+	return model.ModelConfig{}
+}
+
 // Description 返回提供商描述。
 func (p *GoogleProvider) Description() string {
 	return "Google Gemini AI 模型"

@@ -131,6 +131,14 @@ func (p *AzureProvider) Name() string {
 	return AzureProviderName
 }
 
+// GetModelConfig 获取当前模型配置。
+func (p *AzureProvider) GetModelConfig() model.ModelConfig {
+	if p.model != nil {
+		return *p.model
+	}
+	return model.ModelConfig{}
+}
+
 // Description 返回提供商描述。
 func (p *AzureProvider) Description() string {
 	return "Azure OpenAI Service"

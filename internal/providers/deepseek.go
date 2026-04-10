@@ -78,6 +78,11 @@ func (p *DeepSeekProvider) Name() string {
 	return "deepseek"
 }
 
+// GetModelConfig 获取当前模型配置。
+func (p *DeepSeekProvider) GetModelConfig() model.ModelConfig {
+	return p.BaseProvider.Config()
+}
+
 // Validate 验证配置。
 func (p *DeepSeekProvider) Validate() error {
 	if p.apiKey == "" {

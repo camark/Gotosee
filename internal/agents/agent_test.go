@@ -17,6 +17,9 @@ type mockProvider struct{}
 func (m *mockProvider) Name() string        { return "mock" }
 func (m *mockProvider) Description() string { return "mock provider" }
 func (m *mockProvider) Validate() error     { return nil }
+func (m *mockProvider) GetModelConfig() model.ModelConfig {
+	return model.ModelConfig{Model: "mock-model"}
+}
 func (m *mockProvider) Complete(ctx context.Context, messages []conversation.Message, config model.ModelConfig) (conversation.Message, error) {
 	return conversation.NewTextMessage(conversation.RoleAssistant, "Hello from mock"), nil
 }

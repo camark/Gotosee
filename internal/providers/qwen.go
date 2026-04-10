@@ -77,6 +77,11 @@ func (p *QwenProvider) Name() string {
 	return "qwen"
 }
 
+// GetModelConfig 获取当前模型配置。
+func (p *QwenProvider) GetModelConfig() model.ModelConfig {
+	return p.BaseProvider.Config()
+}
+
 // Validate 验证配置。
 func (p *QwenProvider) Validate() error {
 	if p.apiKey == "" {

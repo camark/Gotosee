@@ -104,6 +104,14 @@ func (p *AnthropicProvider) Name() string {
 	return AnthropicProviderName
 }
 
+// GetModelConfig 获取当前模型配置。
+func (p *AnthropicProvider) GetModelConfig() model.ModelConfig {
+	if p.model != nil {
+		return *p.model
+	}
+	return model.ModelConfig{}
+}
+
 // Description 返回提供商描述。
 func (p *AnthropicProvider) Description() string {
 	return "Anthropic Claude AI 模型"

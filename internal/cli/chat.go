@@ -56,7 +56,7 @@ func runChat(cmd *cobra.Command, args []string) error {
 	// 创建提供商
 	provider, err := providers.GetProvider(cfg.Provider, cfg.APIKey, cfg.BaseURL, cfg.Model)
 	if err != nil {
-		return fmt.Errorf("创建提供商失败：%w", err)
+		return fmt.Errorf("创建提供商失败：%w\n请检查配置：provider=%s, model=%s, api_key 已设置=%v", err, cfg.Provider, cfg.Model, cfg.APIKey != "")
 	}
 
 	fmt.Printf("连接到 %s (%s)...\n", provider.Name(), cfg.Model)
@@ -83,6 +83,7 @@ func runChat(cmd *cobra.Command, args []string) error {
 		agentConfig := agents.NewAgentConfig(sessionManager, "auto", false, agents.GoosePlatformCLI)
 		agent = agents.NewAgentWithConfig(agentConfig)
 		agent.SetProvider(provider)
+		fmt.Printf("Agent 已初始化，使用模型：%s\n", cfg.Model)
 	}
 
 	for {

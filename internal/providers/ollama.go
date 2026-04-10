@@ -101,6 +101,14 @@ func (p *OllamaProvider) Name() string {
 	return OllamaProviderName
 }
 
+// GetModelConfig 获取当前模型配置。
+func (p *OllamaProvider) GetModelConfig() model.ModelConfig {
+	if p.model != nil {
+		return *p.model
+	}
+	return model.ModelConfig{}
+}
+
 // Description 返回提供商描述。
 func (p *OllamaProvider) Description() string {
 	return "Ollama 本地模型"

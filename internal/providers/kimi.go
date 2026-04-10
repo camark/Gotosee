@@ -72,6 +72,11 @@ func (p *KimiProvider) Name() string {
 	return "kimi"
 }
 
+// GetModelConfig 获取当前模型配置。
+func (p *KimiProvider) GetModelConfig() model.ModelConfig {
+	return p.BaseProvider.Config()
+}
+
 // Validate 验证配置。
 func (p *KimiProvider) Validate() error {
 	if p.apiKey == "" {

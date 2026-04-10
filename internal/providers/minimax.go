@@ -74,6 +74,11 @@ func (p *MiniMaxProvider) Name() string {
 	return "minimax"
 }
 
+// GetModelConfig 获取当前模型配置。
+func (p *MiniMaxProvider) GetModelConfig() model.ModelConfig {
+	return p.BaseProvider.Config()
+}
+
 // Validate 验证配置。
 func (p *MiniMaxProvider) Validate() error {
 	if p.apiKey == "" {

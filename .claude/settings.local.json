@@ -35,7 +35,8 @@
       "Bash(powershell.exe:*)",
       "Bash(wslcmd -c \"/mnt/c/git/gogo/goose.exe --help\")",
       "Bash(./goose.exe version:*)",
-      "Bash(./goose.exe chat:*)"
+      "Bash(./goose.exe chat:*)",
+      "Bash(kill %1)"
     ]
   }
 }

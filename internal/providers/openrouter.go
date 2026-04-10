@@ -97,6 +97,14 @@ func (p *OpenRouterProvider) Name() string {
 	return OpenRouterProviderName
 }
 
+// GetModelConfig 获取当前模型配置。
+func (p *OpenRouterProvider) GetModelConfig() model.ModelConfig {
+	if p.model != nil {
+		return *p.model
+	}
+	return model.ModelConfig{}
+}
+
 // Description 返回提供商描述。
 func (p *OpenRouterProvider) Description() string {
 	return "OpenRouter - 多模型聚合平台"

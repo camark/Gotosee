@@ -92,6 +92,11 @@ func (p *OpenAIProvider) Name() string {
 	return "openai"
 }
 
+// GetModelConfig 获取当前模型配置。
+func (p *OpenAIProvider) GetModelConfig() model.ModelConfig {
+	return p.BaseProvider.Config()
+}
+
 // Validate 验证配置。
 func (p *OpenAIProvider) Validate() error {
 	if p.apiKey == "" {
