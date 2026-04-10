@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/aaif-goose/gogo/internal/conversation"
 	"github.com/aaif-goose/gogo/internal/model"
@@ -156,8 +157,10 @@ func (p *OllamaProvider) Complete(ctx context.Context, messages []conversation.M
 	}
 
 	return conversation.Message{
-		Role:    "assistant",
-		Content: ollamaResp.Message.Content,
+		Role: conversation.RoleAssistant,
+		Content: []conversation.MessageContent{
+			{Type: conversation.MessageContentText, Text: ollamaResp.Message.Content},
+		},
 	}, nil
 }
 
@@ -277,9 +280,17 @@ func (p *OllamaProvider) convertMessages(messages []conversation.Message) []olla
 			role = "system"
 		}
 
+		// 拼接所有内容块为文本
+		var contentBuilder strings.Builder
+		for _, c := range msg.Content {
+			if c.Type == conversation.MessageContentText {
+				contentBuilder.WriteString(c.Text)
+			}
+		}
+
 		ollamaMsgs = append(ollamaMsgs, ollamaMessage{
 			Role:    role,
-			Content: msg.Content,
+			Content: contentBuilder.String(),
 		})
 	}
 	return ollamaMsgs
